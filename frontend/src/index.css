@@ -4,7 +4,7 @@
 :root {
   --logo-navy: #0b2540;
   --logo-teal: #2fa5b6;
-  --logo-light-cyan: #7dd3e3;
+  --logo-light-cyan: #90deeb;
   --logo-deep-blue: #0072a3;
   --bg-dark: #06111c;
   --bg-card: #091c2e;
@@ -27,16 +27,20 @@ body {
   font-style: italic;
   color: var(--logo-light-cyan);
 }
-
+.hero-title{
+  color:#336599;
+}
 /* Logo sizing */
 .logo-img {
   height: 48px;
   width: auto;
+  border-radius: 50%;
 }
 
 .footer-logo {
   height: 70px;
   width: auto;
+  border-radius:50%;
 }
 
 /* Custom animations */
