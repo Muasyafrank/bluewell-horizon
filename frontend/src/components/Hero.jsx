@@ -39,10 +39,10 @@ const Hero = () => (
 
           {/* Buttons */}
           <div className="d-flex flex-wrap justify-content-center gap-3 mb-5 animate-fade-in animate-delay-4">
-            <a href="#contact" className="btn btn-light btn-lg rounded-pill px-5 fw-bold d-flex align-items-center gap-2">
+            <a href="/contact" className="btn btn-light btn-lg rounded-pill px-5 fw-bold d-flex align-items-center gap-2">
               Get a Free Consultation <FaArrowRight />
             </a>
-            <a href="#services" className="btn btn-outline-light btn-lg rounded-pill px-5 d-flex align-items-center gap-2">
+            <a href="/services" className="btn btn-outline-light btn-lg rounded-pill px-5 d-flex align-items-center gap-2">
               <FaCogs /> Explore Services
             </a>
           </div>

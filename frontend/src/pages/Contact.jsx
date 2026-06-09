@@ -1,16 +1,59 @@
 import React, { useState } from 'react';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaGlobe, FaClock, FaCheckCircle, FaAward } from 'react-icons/fa';
-import { servicesData } from '../data/services'; // Updated import path
-
+import { servicesData } from '../data/services';
+import Toast from '../components/Toast';
+import SuccessModal from '../components/SuccessModal';
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', service: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  
+  // States for Toast and Modal feedback
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Thank you for your message! Our team will contact you shortly.");
-    setFormData({ name: '', email: '', phone: '', service: '', message: '' });
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Clear form
+        setFormData({ name: '', email: '', phone: '', service: '', message: '' });
+        
+        // Trigger Success Modal
+        setShowSuccessModal(true);
+        
+        // Trigger Success Toast
+        setToastMessage('Message sent successfully!');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        // Trigger Error Toast
+        setToastMessage(data.message || 'Failed to send message. Please try again.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    } catch (error) {
+      // Trigger Network Error Toast
+      setToastMessage('Network error. Please check your connection.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -90,7 +133,7 @@ const Contact = () => {
 
               <div className="mt-5 p-4 rounded-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                 <div className="d-flex align-items-center gap-2 mb-2">
-                  <FaClock className="text-info" style={{ color: '#2fa5b6' }} />
+                  <FaClock style={{ color: '#2fa5b6' }} />
                   <h6 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Business Hours</h6>
                 </div>
                 <p className="mb-0 small" style={{ color: '#718096' }}>Monday - Saturday: 8:00 AM - 6:00 PM</p>
@@ -140,8 +183,9 @@ const Contact = () => {
                     </div>
                     <div className="col-12">
                       <button type="submit" className="btn btn-primary w-100 py-3 rounded-pill fw-semibold"
-                              style={{ backgroundColor: '#2fa5b6', border: 'none', fontSize: '1rem' }}>
-                        Send Message
+                              style={{ backgroundColor: '#2fa5b6', border: 'none', fontSize: '1rem' }}
+                              disabled={loading}>
+                        {loading ? 'Sending...' : 'Send Message'}
                       </button>
                     </div>
                   </div>
@@ -189,6 +233,19 @@ const Contact = () => {
           </div>
         </div>
       </section>
+
+      {/* Toast Notification & Success Modal */}
+      <Toast 
+        show={showToast} 
+        message={toastMessage} 
+        type={toastType} 
+        onClose={() => setShowToast(false)} 
+      />
+
+      <SuccessModal 
+        show={showSuccessModal} 
+        handleClose={() => setShowSuccessModal(false)} 
+      />
     </>
   );
 };
