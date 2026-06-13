@@ -7,8 +7,7 @@ import './index.css';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import About from './pages/About';
-import Services from './pages/Services';
-import Technologies from './pages/Technologies';
+import Solutions from './pages/Solutions';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 
@@ -19,8 +18,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
-          <Route path="services" element={<Services />} />
-          <Route path="technologies" element={<Technologies />} />
+          <Route path="solutions" element={<Solutions />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="contact" element={<Contact />} />
         </Route>

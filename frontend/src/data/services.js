@@ -1,29 +1,36 @@
 // src/data/services.js
+import { FaTint, FaIndustry, FaWater, FaShieldAlt, FaClipboardCheck, FaTools } from 'react-icons/fa';
+
 export const servicesData = [
   { 
     id: 1,
-    icon: "FaTint", 
+    image:'/images/gallery-6.png',
+    icon: FaTint, 
     title: "Water Purification", 
-    shortDesc: "Advanced purification for ultimate purity",
-    desc: "Comprehensive purification systems utilizing advanced technologies including Reverse Osmosis (RO), UV sterilization, and activated carbon treatment.",
-    description: "Bluewell Horizon Limited offers comprehensive purification systems utilizing advanced technologies including Reverse Osmosis (RO), UV sterilization, and activated carbon treatment. Our systems effectively eliminate bacteria, viruses, chemicals, and heavy metals to ensure safe and potable water. This multi-barrier approach guarantees the highest purity standards for residential, commercial, and industrial applications.",
+    shortDesc: "Comprehensive purification, softening, and filtration",
+    desc: "Complete water treatment solutions including RO, UV sterilization, multimedia filtration, and water softening for all environments.",
+    description: "Bluewell Horizon Limited offers comprehensive water purification and treatment systems. Our solutions encompass advanced Reverse Osmosis (RO), UV sterilization, and activated carbon treatment to eliminate bacteria, viruses, and heavy metals. We also integrate Multimedia Filtration to remove sediment and turbidity, and Water Softening systems to prevent scaling. For critical applications, we provide UltraPure water systems using EDI technology. This multi-barrier approach guarantees the highest purity standards for residential, commercial, industrial, and medical applications.",
     features: [
-      'Reverse Osmosis (RO) integration',
-      'UV sterilization and activated carbon',
-      'Eliminates bacteria, viruses, and heavy metals',
-      'Multi-barrier purification approach',
-      'Ensures safe and potable water output'
+      'Reverse Osmosis (RO) and UV sterilization',
+      'Multimedia filtration for sediment and turbidity removal',
+      'Water softening to remove hardness minerals and prevent scaling',
+      'UltraPure EDI systems for laboratories and medical facilities',
+      'PLC-controlled automated operation and monitoring',
+      'Multi-barrier purification approach'
     ],
     applications: [
       { name: 'Residential Homes', icon: 'FaHome' },
       { name: 'Commercial Buildings', icon: 'FaBuilding' },
-      { name: 'Industrial Facilities', icon: 'FaIndustry' }
+      { name: 'Industrial Facilities', icon: 'FaIndustry' },
+      { name: 'Laboratories & Medical', icon: 'FaFlask' },
+      { name: 'Borehole Treatment', icon: 'FaTint' }
     ],
-    benefits: 'Our multi-barrier approach guarantees the highest purity standards, ensuring your water is completely safe for consumption and daily use while protecting your plumbing and appliances.'
+    benefits: 'Our comprehensive multi-barrier approach guarantees the highest purity standards. Whether you need basic sediment removal, hardness prevention, or ultrapure water for medical use, our integrated systems ensure your water is completely safe, efficient, and tailored to your specific environment.'
   },
   { 
     id: 2,
-    icon: "FaIndustry", 
+    image:'/images/gallery-7.png',
+    icon: FaIndustry, 
     title: "Water Bottling Plant Solutions", 
     shortDesc: "Complete bottling plant setup and support",
     desc: "Complete water bottling solutions for entrepreneurs and established businesses, from design to operational support.",
@@ -44,7 +51,8 @@ export const servicesData = [
   },
   { 
     id: 3,
-    icon: "FaWater", 
+    image: '/images/gallery-8.png',
+    icon: FaWater, 
     title: "Desalination Systems", 
     shortDesc: "Convert saline water to fresh water",
     desc: "Advanced membrane technology to convert saline or brackish water into fresh, usable water for coastal regions and high-salinity boreholes.",
@@ -65,7 +73,8 @@ export const servicesData = [
   },
   { 
     id: 4,
-    icon: "FaShieldAlt", 
+    image: '/images/gallery-9.png',
+    icon: FaShieldAlt, 
     title: "Water Disinfection", 
     shortDesc: "Eliminate harmful pathogens safely",
     desc: "Effective UV, chlorination, and ozone technologies to eliminate harmful microorganisms for safe and hygienic water.",
@@ -86,7 +95,8 @@ export const servicesData = [
   },
   { 
     id: 5,
-    icon: "FaClipboardCheck", 
+    image: '/images/gallery-10.png',
+    icon: FaClipboardCheck, 
     title: "Water Diagnosis & System Design", 
     shortDesc: "Professional analysis and custom design",
     desc: "Professional water quality analysis and diagnostics to design customized, cost-effective treatment systems.",
@@ -107,7 +117,8 @@ export const servicesData = [
   },
   { 
     id: 6,
-    icon: "FaTools", 
+    image: '/images/gallery-11.png',
+    icon: FaTools, 
     title: "Installation & Technical Support", 
     shortDesc: "Expert installation and after-sales care",
     desc: "Professional installation, routine maintenance, troubleshooting, and spare parts supply for long-term reliability.",
@@ -125,70 +136,5 @@ export const servicesData = [
       { name: 'Preventative Maintenance', icon: 'FaCalendarCheck' }
     ],
     benefits: 'Maximize the lifespan and efficiency of your water treatment system with our dedicated technical support, ensuring zero downtime and consistent water quality.'
-  },
-  { 
-    id: 7,
-    icon: "FaFlask", 
-    title: "UltraPure Water Systems", 
-    shortDesc: "High-purity water for critical industries",
-    desc: "High-purity water solutions with automated monitoring and EDI systems for laboratories and medical facilities.",
-    description: "Bluewell Horizon Limited provides ultrapure water systems for laboratories, pharmaceutical industries, medical facilities, and precision manufacturing. Our advanced EDI systems ensure high-purity water through automated monitoring, efficient filtration, and reliable performance.",
-    features: [
-      'Advanced Electrodeionization (EDI) systems',
-      'Automated water quality monitoring',
-      'Efficient multi-stage filtration',
-      'Consistent high-purity water output',
-      'Reliable performance for critical applications'
-    ],
-    applications: [
-      { name: 'Laboratories', icon: 'FaFlask' },
-      { name: 'Pharmaceutical Industries', icon: 'FaHospital' },
-      { name: 'Medical Facilities', icon: 'FaHeartbeat' },
-      { name: 'Precision Manufacturing', icon: 'FaMicrochip' }
-    ],
-    benefits: 'Achieve the strictest water purity standards required for sensitive scientific and medical applications with our automated, highly reliable UltraPure systems.'
-  },
-  { 
-    id: 8,
-    icon: "FaFilter", 
-    title: "Water Softening Systems", 
-    shortDesc: "Prevent scaling and protect equipment",
-    desc: "PLC-controlled systems to remove hardness minerals, prevent scaling, and improve water efficiency.",
-    description: "We provide water softening systems designed to remove hardness minerals, prevent scaling, protect equipment, and improve water efficiency for homes, hotels, hospitals, factories, and commercial facilities. Features include automatic regeneration, PLC-controlled systems, stainless steel and FRP tanks, and reliable, energy-efficient operation.",
-    features: [
-      'Removes hardness minerals effectively',
-      'Automatic regeneration cycles',
-      'PLC-controlled smart operation',
-      'Durable stainless steel and FRP tanks',
-      'Reliable and energy-efficient operation'
-    ],
-    applications: [
-      { name: 'Homes & Apartments', icon: 'FaHome' },
-      { name: 'Hotels & Resorts', icon: 'FaHotel' },
-      { name: 'Hospitals', icon: 'FaHospital' },
-      { name: 'Factories', icon: 'FaIndustry' }
-    ],
-    benefits: 'Protect your expensive plumbing, boilers, and appliances from scale damage while significantly reducing soap and detergent usage with our energy-efficient softeners.'
-  },
-  { 
-    id: 9,
-    icon: "FaWater", 
-    title: "Multimedia Filtration Systems", 
-    shortDesc: "Remove sediment and suspended impurities",
-    desc: "Removal of sediment, turbidity, chlorine, and suspended impurities for borehole and industrial pretreatment.",
-    description: "Our multimedia filtration systems remove sediment, turbidity, chlorine, and suspended impurities from raw water sources to improve water quality and protect purification equipment. Applications include borehole water treatment, industrial pretreatment, and commercial facilities.",
-    features: [
-      'Removes sediment and turbidity',
-      'Eliminates chlorine and suspended impurities',
-      'Protects downstream purification equipment',
-      'Improves overall raw water quality',
-      'Robust design for heavy-duty use'
-    ],
-    applications: [
-      { name: 'Borehole Water Treatment', icon: 'FaTint' },
-      { name: 'Industrial Pretreatment', icon: 'FaIndustry' },
-      { name: 'Commercial Facilities', icon: 'FaBuilding' }
-    ],
-    benefits: 'Act as the perfect first line of defense for your water system, extending the life of your expensive RO membranes and UV lamps by removing heavy sediments upfront.'
   }
 ];

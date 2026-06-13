@@ -55,6 +55,18 @@ const ServiceModal = ({ show, handleClose, service }) => {
             
             {/* Body */}
             <div className="modal-body pt-4 px-4">
+              {service.image && (
+                <img 
+                  src={service.image}
+                  alt={service.title}
+                  className="w-100 rounded-4 mb-4"
+                  style={{
+                    height:'250px',
+                    objectFit:'cover',
+                    border: '1px solid #e2e8f0'
+                  }}
+                />
+              )}
               <p className="lead mb-4" style={{ color: '#4a5568', lineHeight: 1.7, fontSize: '1.1rem' }}>
                 {service.description}
               </p>

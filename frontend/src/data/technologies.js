@@ -2,6 +2,7 @@
 export const technologiesData = [
   {
     id: 1,
+    image: '/images/gallery-5.png',
     name: 'Reverse Osmosis (RO)',
     shortDesc: 'Advanced membrane filtration for highest purity',
     description: 'Reverse Osmosis is a water purification process that uses a semi-permeable membrane to remove ions, molecules, and larger particles from drinking water. Our RO systems provide the highest level of water purification by forcing water through a membrane that filters out contaminants.',
@@ -23,6 +24,7 @@ export const technologiesData = [
   },
   {
     id: 2,
+    image: '/images/gallery-4.png',
     name: 'Ultrafiltration (UF)',
     shortDesc: 'Precise membrane filtration for clean water',
     description: 'Ultrafiltration uses hollow fiber or sheet membranes to physically separate particles and microorganisms from water. This technology is highly effective for removing suspended solids, bacteria, and viruses while retaining beneficial minerals.',
@@ -44,6 +46,7 @@ export const technologiesData = [
   },
   {
     id: 3,
+    image: '/images/gallery-3.png',
     name: 'Nanofiltration (NF)',
     shortDesc: 'Selective filtration for specific contaminants',
     description: 'Nanofiltration is a membrane filtration process that falls between reverse osmosis and ultrafiltration. It effectively removes divalent ions, organic molecules, and specific contaminants while allowing monovalent ions to pass through.',
@@ -65,6 +68,7 @@ export const technologiesData = [
   },
   {
     id: 4,
+    image: '/images/gallery-4.png',
     name: 'UV Sterilization',
     shortDesc: 'Chemical-free disinfection technology',
     description: 'Ultraviolet (UV) sterilization uses UV-C light to inactivate microorganisms by disrupting their DNA. This chemical-free disinfection method is highly effective against bacteria, viruses, and protozoa without altering water taste or chemistry.',
@@ -86,6 +90,7 @@ export const technologiesData = [
   },
   {
     id: 5,
+    image: '/images/gallery-5.png',
     name: 'Water Softening',
     shortDesc: 'Remove hardness minerals effectively',
     description: 'Water softening systems use ion exchange technology to remove calcium and magnesium ions that cause water hardness. This prevents scale buildup, extends equipment life, and improves water efficiency in homes and businesses.',
@@ -107,6 +112,7 @@ export const technologiesData = [
   },
   {
     id: 6,
+    image: '/images/gallery-6.png',
     name: 'Electrodeionization (EDI)',
     shortDesc: 'Ultra-pure water for critical applications',
     description: 'Electrodeionization combines ion exchange membranes and ion exchange resins with electrical current to produce ultrapure water continuously. This technology is essential for laboratories, pharmaceutical, and high-tech manufacturing.',
@@ -128,6 +134,7 @@ export const technologiesData = [
   },
   {
     id: 7,
+    image: '/images/gallery-7.png',
     name: 'Ozone Treatment',
     shortDesc: 'Powerful oxidation and disinfection',
     description: 'Ozone treatment uses ozone gas (O₃) as a powerful oxidizing agent to disinfect water, remove color, odor, and organic contaminants. It\'s one of the most effective methods for water purification and taste improvement.',
@@ -149,6 +156,7 @@ export const technologiesData = [
   },
   {
     id: 8,
+    image: '/images/gallery-8.png',
     name: 'Automated Controls & PLC',
     shortDesc: 'Smart water management systems',
     description: 'Our Programmable Logic Controller (PLC) systems provide intelligent automation for water treatment operations. These systems monitor, control, and optimize treatment processes in real-time for maximum efficiency.',

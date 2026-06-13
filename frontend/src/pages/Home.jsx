@@ -5,8 +5,41 @@ import { Link } from 'react-router-dom';
 import { servicesData } from '../data/services';
 
 const Home = () => {
-  // Select top 6 services for landing page
   const featuredServices = servicesData.slice(0, 6);
+
+  // Relevant images for the gallery
+  const galleryImages = [
+    {
+      url: '/images/gallery-1.png',
+      title: 'Industrial Water Treatment Plant',
+      category: 'Industrial'
+    },
+    {
+      url: '/images/gallery-2.png',
+      title: 'Water Purification System',
+      category: 'Purification'
+    },
+    {
+      url: '/images/gallery-3.png',
+      title: 'Reverse Osmosis Installation',
+      category: 'RO Systems'
+    },
+    {
+      url: '/images/gallery-4.png',
+      title: 'Clean Water Distribution',
+      category: 'Distribution'
+    },
+    {
+      url: '/images/gallery-5.png',
+      title: 'Water Quality Testing',
+      category: 'Diagnostics'
+    },
+    {
+      url: '/images/gallery-6.png',
+      title: 'Commercial Water System',
+      category: 'Commercial'
+    }
+  ];
 
   return (
     <>
@@ -14,13 +47,18 @@ const Home = () => {
       <Hero />
 
       {/* About Preview Section */}
-      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
+      <section className="py-5" style={{ 
+        backgroundImage:`linear-gradient(rgba(6,17,28,0.85),rgba(6,17,28,0.95)),url('/images/gallery-6.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+       }}>
         <div className="container py-5">
           <div className="row align-items-center">
             <div className="col-lg-6 mb-4 mb-lg-0">
               <div className="d-flex align-items-center gap-3 mb-4">
-                <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
-                <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>About Us</span>
+                <div style={{ width: '40px', height: '1px', backgroundColor: '#2fa5b6' }}></div>
+                <span className="text-uppercase small fw-semibold" style={{ color: '#2fa5b6', letterSpacing: '3px' }}>About Us</span>
               </div>
               <h2 className="display-5 fw-bold mb-4" style={{ color: '#0b2540', lineHeight: 1.2 }}>
                 Trusted provider of <span className="fst-italic" style={{ color: '#2fa5b6' }}>innovative</span> water treatment technologies
@@ -143,17 +181,97 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
+      {/* NEW: Image Gallery Section */}
       <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
+        <div className="container py-5">
+          <div className="text-center mb-5">
+            <div className="d-inline-flex align-items-center gap-3 mb-4">
+              <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
+              <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>Our Work</span>
+              <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
+            </div>
+            <h2 className="display-5 fw-bold mb-3" style={{ color: '#0b2540', lineHeight: 1.2 }}>
+              Projects & <span className="fst-italic" style={{ color: '#2fa5b6' }}>Installations</span>
+            </h2>
+            <p className="lead mx-auto" style={{ color: '#4a5568', maxWidth: '700px', fontWeight: '300' }}>
+              Explore our portfolio of water treatment installations across residential, commercial, and industrial sectors.
+            </p>
+          </div>
+
+          <div className="row g-4">
+            {galleryImages.map((image, index) => (
+              <div className="col-md-4" key={index}>
+                <div 
+                  className="rounded-4 overflow-hidden h-100" 
+                  style={{ 
+                    border: '1px solid #e2e8f0',
+                    backgroundColor: '#ffffff',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => { 
+                    e.currentTarget.style.borderColor = '#2fa5b6'; 
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(47, 165, 182, 0.12)'; 
+                    e.currentTarget.style.transform = 'translateY(-4px)'; 
+                  }}
+                  onMouseLeave={(e) => { 
+                    e.currentTarget.style.borderColor = '#e2e8f0'; 
+                    e.currentTarget.style.boxShadow = 'none'; 
+                    e.currentTarget.style.transform = 'translateY(0)'; 
+                  }}
+                >
+                  <div style={{ overflow: 'hidden', height: '250px' }}>
+                    <img 
+                      src={image.url} 
+                      alt={image.title}
+                      className="w-100 h-100"
+                      style={{ objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    />
+                  </div>
+                  <div className="p-4">
+                    <span className="badge rounded-pill mb-2" style={{ 
+                      backgroundColor: '#f0f9fa', 
+                      color: '#2fa5b6',
+                      border: '1px solid #d1e8eb',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
+                      {image.category}
+                    </span>
+                    <h6 className="fw-bold mb-0" style={{ color: '#0b2540', fontSize: '1.05rem' }}>{image.title}</h6>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-5">
+            <Link to="/gallery" className="btn btn-outline-primary btn-lg rounded-pill px-5" 
+                  style={{ borderColor: '#2fa5b6', color: '#2fa5b6', borderWidth: '2px', fontWeight: '600' }}>
+              View Full Gallery
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us Section */}
+      <section className="py-5" style={{ 
+        backgroundImage:`linear-gradient(rgba(6,17,28,0.85),rgba(6,17,28,0.95)),url('/images/gallery-1.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+       }}>
         <div className="container py-5">
           <div className="row align-items-center">
             <div className="col-lg-6 mb-4 mb-lg-0">
               <div className="d-flex align-items-center gap-3 mb-4">
-                <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
-                <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>Why Choose Us</span>
+                <div style={{ width: '40px', height: '1px', backgroundColor: '#2fa5b6' }}></div>
+                <span className="text-uppercase small fw-semibold" style={{ color: '#2fa5b6', letterSpacing: '3px' }}>Why Choose Us</span>
               </div>
               <h2 className="display-5 fw-bold mb-4" style={{ color: '#0b2540', lineHeight: 1.2 }}>
-                Delivering excellence in <span className="fst-italic" style={{ color: '#2fa5b6' }}>every drop</span>
+                Delivering excellence in <span className="fst-italic" style={{ color: '#7dd3e3' }}>every drop</span>
               </h2>
               <p className="lead mb-4" style={{ color: '#4a5568', fontWeight: '300', lineHeight: 1.7 }}>
                 We combine cutting-edge technology with expert service to provide water solutions that exceed expectations.
@@ -167,8 +285,8 @@ const Home = () => {
                       <FaCheckCircle />
                     </div>
                     <div>
-                      <h6 className="fw-bold mb-2" style={{ color: '#0b2540', fontSize: '1rem' }}>Customized Solutions</h6>
-                      <p className="mb-0 small" style={{ color: '#718096', lineHeight: 1.5 }}>Tailored to meet the unique needs and budget of every client.</p>
+                      <h6 className="fw-bold mb-2" style={{ color: '#ffffff', fontSize: '1rem' }}>Customized Solutions</h6>
+                      <p className="mb-0 small" style={{ color: '#cbd5e0', lineHeight: 1.5 }}>Tailored to meet the unique needs and budget of every client.</p>
                     </div>
                   </div>
                 </div>
@@ -179,8 +297,8 @@ const Home = () => {
                       <FaTools />
                     </div>
                     <div>
-                      <h6 className="fw-bold mb-2" style={{ color: '#0b2540', fontSize: '1rem' }}>End-to-End Service</h6>
-                      <p className="mb-0 small" style={{ color: '#718096', lineHeight: 1.5 }}>From diagnosis and design to installation and after-sales support.</p>
+                      <h6 className="fw-bold mb-2" style={{ color: '#ffffff', fontSize: '1rem' }}>End-to-End Service</h6>
+                      <p className="mb-0 small" style={{ color: '#cbd5e0', lineHeight: 1.5 }}>From diagnosis and design to installation and after-sales support.</p>
                     </div>
                   </div>
                 </div>
@@ -191,8 +309,8 @@ const Home = () => {
                       <FaWater />
                     </div>
                     <div>
-                      <h6 className="fw-bold mb-2" style={{ color: '#0b2540', fontSize: '1rem' }}>Commitment to Sustainability</h6>
-                      <p className="mb-0 small" style={{ color: '#718096', lineHeight: 1.5 }}>Eco-friendly solutions that promote sustainable water use.</p>
+                      <h6 className="fw-bold mb-2" style={{ color: '#ffffff', fontSize: '1rem' }}>Commitment to Sustainability</h6>
+                      <p className="mb-0 small" style={{ color: '#cbd5e0', lineHeight: 1.5 }}>Eco-friendly solutions that promote sustainable water use.</p>
                     </div>
                   </div>
                 </div>
@@ -203,8 +321,8 @@ const Home = () => {
                       <FaClock />
                     </div>
                     <div>
-                      <h6 className="fw-bold mb-2" style={{ color: '#0b2540', fontSize: '1rem' }}>Timely & Transparent</h6>
-                      <p className="mb-0 small" style={{ color: '#718096', lineHeight: 1.5 }}>Upholding integrity, transparency, and fast response times.</p>
+                      <h6 className="fw-bold mb-2" style={{ color: '#ffffff', fontSize: '1rem' }}>Timely & Transparent</h6>
+                      <p className="mb-0 small" style={{ color: '#cbd5e0', lineHeight: 1.5 }}>Upholding integrity, transparency, and fast response times.</p>
                     </div>
                   </div>
                 </div>
@@ -214,7 +332,7 @@ const Home = () => {
               <div className="position-relative">
                 <div className="rounded-4 overflow-hidden" style={{ border: '1px solid #e2e8f0' }}>
                   <img 
-                    src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                    src="/images/gallery-5.png" 
                     alt="Water Treatment" 
                     className="w-100"
                     style={{ height: '550px', objectFit: 'cover' }}
@@ -239,7 +357,7 @@ const Home = () => {
       </section>
 
       {/* Technologies Preview Section */}
-      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
+      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
         <div className="container py-5">
           <div className="text-center mb-5">
             <div className="d-inline-flex align-items-center gap-3 mb-4">
@@ -293,12 +411,12 @@ const Home = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
+      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
         <div className="container py-5">
           <div className="row justify-content-center">
             <div className="col-lg-10">
               <div className="p-5 rounded-5 text-center" style={{ 
-                backgroundColor: '#ffffff',
+                backgroundColor: '#f8fafc',
                 border: '1px solid #e2e8f0'
               }}>
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4" 

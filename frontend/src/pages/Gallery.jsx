@@ -24,14 +24,17 @@ const Gallery = () => (
     <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
       <div className="container py-5">
         <div className="row g-4">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div className="col-md-4" key={item}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item) => (
+            <div className="col-md-4 col-lg-3" key={item}>
               <div 
-                className="rounded-4 overflow-hidden" 
+                className="rounded-4 overflow-hidden h-100" 
                 style={{ 
                   border: '1px solid #e2e8f0',
                   backgroundColor: '#ffffff',
-                  transition: 'all 0.3s ease' 
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
                 onMouseEnter={(e) => { 
                   e.currentTarget.style.borderColor = '#2fa5b6'; 
@@ -44,20 +47,27 @@ const Gallery = () => (
                   e.currentTarget.style.transform = 'translateY(0)'; 
                 }}
               >
-                <div style={{ overflow: 'hidden' }}>
+                <div style={{ overflow: 'hidden', height: '220px' }}>
                   <img 
-                    src={`https://images.unsplash.com/photo-${item % 2 === 0 ? '1581093458791-9f3c3900df4b' : '1541888946425-d81bb19240f5'}?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80`} 
-                    alt={`Project ${item}`}
-                    className="w-100"
-                    style={{ height: '280px', objectFit: 'cover', transition: 'transform 0.5s ease' }}
-                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                    src={`/images/gallery-${item}.png`} 
+                    alt={`Project ${item}`} 
+                    className="w-100 h-100"
+                    style={{ 
+                      objectFit: 'cover',
+                      transition: 'transform 0.5s ease' 
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
                     onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                   />
                 </div>
-                <div className="p-4">
-                  <h6 className="fw-bold mb-2" style={{ color: '#0b2540', fontSize: '1.1rem' }}>Water Treatment Installation</h6>
-                  <p className="mb-0 small" style={{ color: '#718096' }}>Harambee Estate & Commercial Projects</p>
-                </div>
+                {/* <div className="p-3 mt-auto">
+                  <h6 className="fw-bold mb-1" style={{ color: '#0b2540', fontSize: '0.95rem' }}>
+                    Water Treatment Project {item}
+                  </h6>
+                  <p className="mb-0 small" style={{ color: '#718096' }}>
+                    Professional Installation & Setup
+                  </p>
+                </div> */}
               </div>
             </div>
           ))}
