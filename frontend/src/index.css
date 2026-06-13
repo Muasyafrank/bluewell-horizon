@@ -67,3 +67,91 @@ body {
 html {
   scroll-behavior: smooth;
 }
+/* ===== RESTORED NAVBAR STYLES ===== */
+
+/* Main Navbar Container (Floating Dark Pill) */
+.navbar-dark-custom {
+  background: rgba(8, 24, 40, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 60px;
+  padding: 12px 30px;
+  margin: 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+/* Navbar state when scrolled down */
+.navbar-dark-custom.scrolled {
+  background: rgba(6, 17, 28, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: rgba(47, 165, 182, 0.3);
+}
+
+/* Navigation Links */
+.nav-link-custom {
+  color: #95b5c4 !important;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 18px !important;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  /* justify-content: center; */
+}
+
+.nav-link-custom:hover,
+.nav-link-custom.active {
+  color: #7dd3e3 !important;
+  background: rgba(47, 165, 182, 0.1);
+}
+
+/* Call to Action Button (Get Consultation) */
+.nav-cta-btn {
+  background: #2fa5b6;
+  color: #06111c !important;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 10px 24px !important;
+  border-radius: 30px;
+  border: none;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.nav-cta-btn:hover {
+  background: #7dd3e3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(47, 165, 182, 0.25);
+}
+
+/* Mobile Hamburger Button */
+.hamburger-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn:hover {
+  border-color: #2fa5b6;
+  color: #2fa5b6;
+}
+
+/* Ensure Logo is sized correctly */
+.logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}

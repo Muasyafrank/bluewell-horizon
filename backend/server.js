@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { connectDB, sequelize } = require('./config/db'); // Make sure this file exists in config/
-const contactRoutes = require('./routes/contactRoutes'); // Make sure this file exists in routes/
-require('./models/Contact'); // Make sure this file exists in models/
+const { connectDB, sequelize } = require('./config/db'); 
+const contactRoutes = require('./routes/contactRoutes'); 
+const productRoutes = require('./routes/productRoutes');
+require('./models/Contact'); 
+require('./models/Product'); 
+require('./models/Order'); 
+require('./models/OrderItem'); 
 
-
-// Load env vars
 dotenv.config();
 
 const app = express();
@@ -17,6 +19,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/contact', contactRoutes);
+app.use('/api/products', productRoutes);
 
 // Health Check Route
 app.get('/', (req, res) => {

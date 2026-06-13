@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars, FaTimes, FaShoppingCart } from 'react-icons/fa';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const location = useLocation();
 
   useEffect(() => {
@@ -14,69 +15,83 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    const updateCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+    };
+    updateCartCount();
+    window.addEventListener('storage', updateCartCount);
+    return () => window.removeEventListener('storage', updateCartCount);
+  }, []);
+
+  useEffect(() => {
     setIsOpen(false);
   }, [location]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
-    { name: 'Solutions', path: '/solutions' },
+    { name: 'Solutions', path: '/services' },
+    { name: 'Shop', path: '/shop' },
     { name: 'Gallery', path: '/gallery' },
     { name: 'Contact', path: '/contact' }
   ];
 
   return (
-    <nav className={`navbar navbar-expand-lg fixed-top ${scrolled ? 'scrolled' : ''}`} 
-         style={{
-           background: scrolled ? 'rgba(6, 17, 28, 0.95)' : 'rgba(8, 24, 40, 0.85)',
-           backdropFilter: 'blur(20px)',
-           borderRadius: '60px',
-           margin: '16px',
-           border: '1px solid rgba(255,255,255,0.06)'
-         }}>
-      <div className="container">
-        <NavLink to="/" className="navbar-brand d-flex align-items-center gap-3">
+    <nav className={`navbar-dark-custom ${scrolled ? 'scrolled' : ''}`}>
+      <div className="d-flex justify-content-between align-items-center w-100">
+        <NavLink to="/" className="d-flex align-items-center text-decoration-none">
           <img src="/logo.png" alt="Bluewell Horizon Logo" className="logo-img" />
         </NavLink>
 
-        <button className="navbar-toggler border-0" type="button" onClick={() => setIsOpen(!isOpen)}
-                style={{ color: '#fff', fontSize: '1.5rem' }}>
+        <div className="d-none d-lg-flex align-items-center gap-1">
+          {navLinks.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}
+            >
+              {item.name}
+            </NavLink>
+          ))}
+          <NavLink to="/cart" className="nav-link-custom position-relative">
+            <FaShoppingCart size={20} />
+            {cartCount > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" 
+                    style={{ backgroundColor: '#2fa5b6', fontSize: '0.65rem', padding: '2px 5px' }}>
+                {cartCount}
+              </span>
+            )}
+          </NavLink>
+          <NavLink to="/contact" className="nav-cta-btn ms-2">
+            Get Consultation
+          </NavLink>
+        </div>
+
+        <button className="hamburger-btn d-lg-none" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <FaTimes /> : <FaBars />}
         </button>
-
-        <div className={`collapse navbar-collapse ${isOpen ? 'show' : ''}`} id="navbarNav">
-          <ul className="navbar-nav ms-auto align-items-center">
-            {navLinks.map((item) => (
-              <li className="nav-item" key={item.name}>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) => 
-                    `nav-link px-3 ${isActive ? 'active' : ''}`
-                  }
-                  style={({ isActive }) => ({
-                    color: isActive ? '#7dd3e3' : '#95b5c4',
-                    fontWeight: '500',
-                    fontSize: '0.85rem'
-                  })}
-                >
-                  {item.name}
-                </NavLink>
-              </li>
-            ))}
-            <li className="nav-item ms-lg-3">
-              <NavLink to="/contact" className="btn btn-primary rounded-pill px-4"
-                      style={{ 
-                        background: '#2fa5b6', 
-                        border: 'none',
-                        fontWeight: '700',
-                        fontSize: '0.85rem'
-                      }}>
-                Get Consultation
-              </NavLink>
-            </li>
-          </ul>
-        </div>
       </div>
+
+      {isOpen && (
+        <div className="d-lg-none mt-3 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
+          {navLinks.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              className={({ isActive }) => `nav-link-custom d-block py-2 ${isActive ? 'active' : ''}`}
+            >
+              {item.name}
+            </NavLink>
+          ))}
+          <NavLink to="/cart" className="nav-link-custom d-block py-2">
+            <FaShoppingCart className="me-2" /> Cart ({cartCount})
+          </NavLink>
+          <NavLink to="/contact" className="nav-cta-btn d-inline-block mt-2">
+            Get Consultation
+          </NavLink>
+        </div>
+      )}
     </nav>
   );
 };
