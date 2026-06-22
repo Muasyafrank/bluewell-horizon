@@ -7,9 +7,18 @@ const AdminDashboard = () => {
   const { token, logout } = useAdmin();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('products');
+  
+  // Data States
   const [products, setProducts] = useState([]);
   const [services, setServices] = useState([]);
   const [gallery, setGallery] = useState([]);
+  
+  // Modal & Form States
+  const [showAddModal, setShowAddModal] = useState(null); // 'product', 'service', 'gallery', or null
+  
+  const [newProduct, setNewProduct] = useState({ name: '', description: '', price: '', category: '', image: '', stock: '' });
+  const [newService, setNewService] = useState({ title: '', shortDesc: '', description: '', icon: 'FaTint', image: '' });
+  const [newGallery, setNewGallery] = useState({ title: '', category: '', image: '' });
 
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
@@ -32,13 +41,56 @@ const AdminDashboard = () => {
     fetchData();
   };
 
+  // --- ADD HANDLERS ---
+  const handleAddProduct = async (e) => {
+    e.preventDefault();
+    await fetch('http://localhost:5000/api/admin/products', { method: 'POST', headers, body: JSON.stringify(newProduct) });
+    setShowAddModal(null);
+    setNewProduct({ name: '', description: '', price: '', category: '', image: '', stock: '' });
+    fetchData();
+  };
+
+  const handleAddService = async (e) => {
+    e.preventDefault();
+    await fetch('http://localhost:5000/api/admin/services', { method: 'POST', headers, body: JSON.stringify(newService) });
+    setShowAddModal(null);
+    setNewService({ title: '', shortDesc: '', description: '', icon: 'FaTint', image: '' });
+    fetchData();
+  };
+
+  const handleAddGallery = async (e) => {
+    e.preventDefault();
+    await fetch('http://localhost:5000/api/admin/gallery', { method: 'POST', headers, body: JSON.stringify(newGallery) });
+    setShowAddModal(null);
+    setNewGallery({ title: '', category: '', image: '' });
+    fetchData();
+  };
+
   const handleLogout = () => { logout(); navigate('/'); };
 
-  const tabs = [
-    { id: 'products', label: 'Products', icon: <FaBox /> },
-    { id: 'services', label: 'Services', icon: <FaConciergeBell /> },
-    { id: 'gallery', label: 'Gallery', icon: <FaImages /> }
-  ];
+  // Reusable Modal Wrapper
+  const ModalWrapper = ({ title, show, onClose, onSubmit, children }) => {
+    if (!show) return null;
+    return (
+      <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content border-0 rounded-4">
+            <div className="modal-header border-0">
+              <h5 className="modal-title fw-bold" style={{ color: '#0b2540' }}>{title}</h5>
+              <button type="button" className="btn-close" onClick={onClose}></button>
+            </div>
+            <form onSubmit={onSubmit}>
+              <div className="modal-body">{children}</div>
+              <div className="modal-footer border-0">
+                <button type="button" className="btn btn-light rounded-pill px-4" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn text-white rounded-pill px-4" style={{ backgroundColor: '#2fa5b6' }}>Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-vh-100" style={{ backgroundColor: '#f8fafc', paddingTop: '100px' }}>
@@ -46,20 +98,16 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Admin Dashboard</h2>
-          <button onClick={handleLogout} className="btn btn-outline-danger rounded-pill px-3">
-            <FaSignOutAlt className="me-2" /> Logout
-          </button>
+          <button onClick={handleLogout} className="btn btn-outline-danger rounded-pill px-3"><FaSignOutAlt className="me-2" /> Logout</button>
         </div>
 
         {/* Tabs */}
         <ul className="nav nav-pills mb-4 gap-2">
-          {tabs.map(tab => (
+          {[{id:'products', label:'Products', icon:<FaBox/>}, {id:'services', label:'Services', icon:<FaConciergeBell/>}, {id:'gallery', label:'Gallery', icon:<FaImages/>}].map(tab => (
             <li className="nav-item" key={tab.id}>
-              <button 
-                className={`nav-link rounded-pill px-4 ${activeTab === tab.id ? 'active' : ''}`}
+              <button className={`nav-link rounded-pill px-4 ${activeTab === tab.id ? 'active' : ''}`}
                 style={activeTab === tab.id ? { backgroundColor: '#2fa5b6' } : { color: '#0b2540', backgroundColor: '#fff', border: '1px solid #e2e8f0' }}
-                onClick={() => setActiveTab(tab.id)}
-              >
+                onClick={() => setActiveTab(tab.id)}>
                 {tab.icon} <span className="ms-2">{tab.label}</span>
               </button>
             </li>
@@ -73,8 +121,8 @@ const AdminDashboard = () => {
           {activeTab === 'products' && (
             <>
               <div className="d-flex justify-content-between mb-3">
-                <h5 className="fw-bold" style={{ color: '#0b2540' }}>Manage Products</h5>
-                <button className="btn btn-sm rounded-pill text-white px-3" style={{ backgroundColor: '#2fa5b6' }}>
+                <h5 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Manage Products</h5>
+                <button onClick={() => setShowAddModal('product')} className="btn btn-sm rounded-pill text-white px-3" style={{ backgroundColor: '#2fa5b6' }}>
                   <FaPlus className="me-1" /> Add Product
                 </button>
               </div>
@@ -100,15 +148,17 @@ const AdminDashboard = () => {
           {/* SERVICES TAB */}
           {activeTab === 'services' && (
             <>
-              <h5 className="fw-bold mb-3" style={{ color: '#0b2540' }}>Manage Services</h5>
+              <div className="d-flex justify-content-between mb-3">
+                <h5 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Manage Services</h5>
+                <button onClick={() => setShowAddModal('service')} className="btn btn-sm rounded-pill text-white px-3" style={{ backgroundColor: '#2fa5b6' }}>
+                  <FaPlus className="me-1" /> Add Service
+                </button>
+              </div>
               <div className="row g-3">
                 {services.map(s => (
                   <div className="col-md-6" key={s.id}>
                     <div className="p-3 rounded-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                      <div>
-                        <h6 className="fw-bold mb-1">{s.title}</h6>
-                        <small className="text-muted">{s.shortDesc}</small>
-                      </div>
+                      <div><h6 className="fw-bold mb-1">{s.title}</h6><small className="text-muted">{s.shortDesc}</small></div>
                       <button onClick={() => handleDelete('services', s.id)} className="btn btn-sm btn-outline-danger rounded-circle"><FaTrash /></button>
                     </div>
                   </div>
@@ -120,7 +170,12 @@ const AdminDashboard = () => {
           {/* GALLERY TAB */}
           {activeTab === 'gallery' && (
             <>
-              <h5 className="fw-bold mb-3" style={{ color: '#0b2540' }}>Manage Gallery</h5>
+              <div className="d-flex justify-content-between mb-3">
+                <h5 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Manage Gallery</h5>
+                <button onClick={() => setShowAddModal('gallery')} className="btn btn-sm rounded-pill text-white px-3" style={{ backgroundColor: '#2fa5b6' }}>
+                  <FaPlus className="me-1" /> Add Image
+                </button>
+              </div>
               <div className="row g-3">
                 {gallery.map(g => (
                   <div className="col-md-3" key={g.id}>
@@ -134,9 +189,43 @@ const AdminDashboard = () => {
               </div>
             </>
           )}
-
         </div>
       </div>
+
+      {/* --- MODALS --- */}
+      
+      {/* Add Product Modal */}
+      <ModalWrapper title="Add New Product" show={showAddModal === 'product'} onClose={() => setShowAddModal(null)} onSubmit={handleAddProduct}>
+        <div className="row g-3">
+          <div className="col-12"><label className="form-label small fw-semibold">Product Name</label><input type="text" className="form-control" required value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Price (KES)</label><input type="number" className="form-control" required value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Stock</label><input type="number" className="form-control" required value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Image Path</label><input type="text" className="form-control" placeholder="/images/product.jpg" required value={newProduct.image} onChange={e => setNewProduct({...newProduct, image: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})}></textarea></div>
+        </div>
+      </ModalWrapper>
+
+      {/* Add Service Modal */}
+      <ModalWrapper title="Add New Service" show={showAddModal === 'service'} onClose={() => setShowAddModal(null)} onSubmit={handleAddService}>
+        <div className="row g-3">
+          <div className="col-12"><label className="form-label small fw-semibold">Service Title</label><input type="text" className="form-control" required value={newService.title} onChange={e => setNewService({...newService, title: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Short Description</label><input type="text" className="form-control" required value={newService.shortDesc} onChange={e => setNewService({...newService, shortDesc: e.target.value})} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Icon Name (e.g., FaTint)</label><input type="text" className="form-control" required value={newService.icon} onChange={e => setNewService({...newService, icon: e.target.value})} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Image Path</label><input type="text" className="form-control" placeholder="/images/service.jpg" required value={newService.image} onChange={e => setNewService({...newService, image: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Full Description</label><textarea className="form-control" rows="4" required value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})}></textarea></div>
+        </div>
+      </ModalWrapper>
+
+      {/* Add Gallery Modal */}
+      <ModalWrapper title="Add Gallery Image" show={showAddModal === 'gallery'} onClose={() => setShowAddModal(null)} onSubmit={handleAddGallery}>
+        <div className="row g-3">
+          <div className="col-12"><label className="form-label small fw-semibold">Image Title</label><input type="text" className="form-control" required value={newGallery.title} onChange={e => setNewGallery({...newGallery, title: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={newGallery.category} onChange={e => setNewGallery({...newGallery, category: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Image Path</label><input type="text" className="form-control" placeholder="/images/gallery-1.jpg" required value={newGallery.image} onChange={e => setNewGallery({...newGallery, image: e.target.value})} /></div>
+        </div>
+      </ModalWrapper>
+
     </div>
   );
 };
