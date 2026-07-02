@@ -1,22 +1,25 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path'); // <-- MAKE SURE THIS IS HERE
 const sequelize = require('./config/db');
 
-// Import ALL Models to register them with Sequelize
+// Import Models
 require('./models/Admin');
 require('./models/Contact');
 require('./models/Product');
 require('./models/Service');
 require('./models/Gallery');
-require('./models/Order');      // <-- NEW
-require('./models/OrderItem');  // <-- NEW
+require('./models/Order');
+require('./models/OrderItem');
+require('./models/Technology');
+require('./models/ProcessStep');
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const orderRoutes = require('./routes/orderRoutes'); // <-- NEW
+const uploadRoutes = require('./routes/uploadRoutes'); // <-- MAKE SURE THIS IS HERE
 
 dotenv.config();
 const app = express();
@@ -25,11 +28,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve Uploaded Images Statically <-- ADD THESE TWO LINES
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/orders', orderRoutes); // <-- NEW
+app.use('/api/admin/upload', uploadRoutes); // <-- ADD THIS LINE
 
 app.get('/', (req, res) => res.send('Bluewell Horizon API is running...'));
 
@@ -39,11 +45,8 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ PostgreSQL Connected Successfully');
-    
-    // Note: We use alter: true here so it doesn't wipe data on normal restarts
     await sequelize.sync({ alter: true }); 
     console.log('✅ Database tables synced');
-    
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (error) {
     console.error('❌ Failed to start server:', error);

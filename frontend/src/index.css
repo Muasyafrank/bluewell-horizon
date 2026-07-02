@@ -18,7 +18,7 @@ body {
 
 /* Custom gradients that Bootstrap can't handle */
 .hero-section-dark {
-  background: linear-gradient(160deg, #06111c 0%, #091c2e 40%, var(--logo-navy) 100%);
+  /* background: linear-gradient(160deg, #06111c 0%, #091c2e 40%, var(--logo-navy) 100%); */
   min-height: 100vh;
 }
 

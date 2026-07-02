@@ -84,7 +84,7 @@ const Shop = () => {
   return (
     <>
       {/* Page Header */}
-      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
+      <section className="py-5" style={{ }}>
         <div className="container py-5">
           <div className="d-flex align-items-center gap-3 mb-4">
             <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>

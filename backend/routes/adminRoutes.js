@@ -4,8 +4,9 @@ const { protect } = require('../middleware/auth');
 const Product = require('../models/Product');
 const Service = require('../models/Service');
 const Gallery = require('../models/Gallery');
+const Technology = require('../models/Technology');
+const ProcessStep = require('../models/ProcessStep');
 
-// Generic CRUD factory
 const createCrudRoutes = (routePath, Model) => {
   router.post(routePath, protect, async (req, res) => {
     try { res.status(201).json(await Model.create(req.body)); } 
@@ -24,5 +25,7 @@ const createCrudRoutes = (routePath, Model) => {
 createCrudRoutes('/products', Product);
 createCrudRoutes('/services', Service);
 createCrudRoutes('/gallery', Gallery);
+createCrudRoutes('/technologies', Technology); // NEW
+createCrudRoutes('/process-steps', ProcessStep); // NEW
 
 module.exports = router;

@@ -2,7 +2,15 @@ import React from 'react';
 import { FaFacebook, FaLinkedin, FaTwitter } from 'react-icons/fa';
 
 const Footer = () => (
-  <footer className="py-5" style={{ background: '#040a11', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+  <footer className="py-5" style={{ 
+  backgroundImage: `linear-gradient(rgba(6, 17, 28, 0.92), rgba(6, 17, 28, 0.98)), url('/images/gallery-4.png')`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  color: '#cbd5e0',
+  paddingTop: '80px',
+  paddingBottom: '40px',
+    borderTop: '1px solid rgba(255,255,255,0.06)' 
+    }}>
     <div className="container">
       <div className="row g-4">
         <div className="col-lg-4">

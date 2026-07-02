@@ -2,13 +2,19 @@ import React from 'react';
 import { FaShieldAlt, FaArrowRight, FaCogs, FaTint } from 'react-icons/fa';
 
 const Hero = () => (
-  <section className="hero-section-dark d-flex align-items-center position-relative" style={{paddingTop:'140px',minHeight:'100vh',backgroundRepeat:'no-repeat',backgroundSize:'cover',backgroundImage:'linear-gradient(rgba(6,17,28,0.85),rgba(30, 48, 66, 0.85)), url(\'/images/gallery-4.png\')'}}>
-    {/* Background effects */}
-    <div className="position-absolute" style={{
-      top: '-50%', right: '-20%', width: '800px', height: '800px',
-      background: 'radial-gradient(circle, rgba(47, 165, 182, 0.08) 0%, transparent 70%)',
-      borderRadius: '50%', pointerEvents: 'none'
-    }}></div>
+  <section 
+  className="hero-section-dark d-flex align-items-center position-relative" 
+  style={{ 
+    paddingTop: '140px',
+    minHeight: '100vh',
+    // The linear-gradient creates a dark overlay so the text is readable
+    backgroundImage: `linear-gradient(rgba(6, 17, 28, 0.85), rgba(9, 28, 46, 0.9)), url('/images/gallery-1.png')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed' // Creates a premium parallax scrolling effect
+  }}
+>
     
     <div className="container position-relative" style={{ zIndex: 2 }}>
       <div className="row justify-content-center text-center">

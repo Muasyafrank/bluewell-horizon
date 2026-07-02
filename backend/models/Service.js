@@ -6,7 +6,10 @@ const Service = sequelize.define('Service', {
   shortDesc: { type: DataTypes.STRING },
   description: { type: DataTypes.TEXT },
   icon: { type: DataTypes.STRING, defaultValue: 'FaTint' },
-  image: { type: DataTypes.STRING }
+  image: { type: DataTypes.STRING },
+  features: { type: DataTypes.JSON, defaultValue: [] },      // Array of strings
+  applications: { type: DataTypes.JSON, defaultValue: [] },  // Array of objects {name, icon}
+  benefits: { type: DataTypes.TEXT }
 }, { tableName: 'services' });
 
 module.exports = Service;
