@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import React, { useState, useEffect } from 'react';
 // import { FaTint, FaClock, FaAward, FaCheckCircle, FaTools, FaWater, FaPhone, FaShieldAlt, FaArrowRight } from 'react-icons/fa';
 import { FaTint, FaClock, FaAward, FaCheckCircle, FaTools, FaWater, FaPhone, FaShieldAlt, FaArrowRight, FaBullseye, FaEye, FaHandshake, FaLeaf, FaLightbulb, FaUsers, FaChartLine } from 'react-icons/fa';
@@ -29,8 +30,14 @@ const Home = () => {
 
   return (
     <>
+     <SEO 
+        title="Home - Water Treatment Solutions in Kenya"
+        description="Bluewell Horizon Limited - Leading provider of water purification, desalination, and bottling plant solutions in Kenya. Trusted by residential, commercial, and industrial clients."
+        keywords="water treatment Kenya, water purification Nairobi, reverse osmosis Kenya, water bottling plant, desalination Kenya, Bluewell Horizon"
+        url="https://www.bluewellhorizonlimited.com"
+      />
       {/* Hero Section */}
-      <section className="hero-section-dark d-flex align-items-center position-relative" style={{ paddingTop: '140px', minHeight: '100vh', backgroundImage: `linear-gradient(rgba(120, 122, 123, 0.85), rgba(72, 80, 87, 0.9)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <section className="hero-section-dark d-flex align-items-center position-relative" style={{ paddingTop: '140px', minHeight: '100vh', backgroundImage: `linear-gradient(rgba(147, 149, 150, 0.25), rgba(140, 145, 149, 0.9)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="container position-relative" style={{ zIndex: 2 }}>
           <div className="row justify-content-center text-center">
             <div className="col-lg-10">
@@ -41,7 +48,7 @@ const Home = () => {
               <h1 className="display-3 fw-bold mb-4 mt-4" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', color: '#ffffff' }}>
                 Pure water,<br />engineered with <span className="fst-italic" style={{ color: '#7dd3e3' }}>precision.</span>
               </h1>
-              <p className="lead mb-5 mx-auto" style={{ maxWidth: '650px', color: '#95b5c4', fontWeight: '300' }}>
+              <p className="lead mb-5 mx-auto" style={{ maxWidth: '650px', color: '#030e14', fontWeight: '300' }}>
                 Bluewell Horizon Limited designs, supplies, installs and maintains advanced water treatment systems for homes, businesses, institutions and industries.
               </p>
               <div className="d-flex flex-wrap justify-content-center gap-3">

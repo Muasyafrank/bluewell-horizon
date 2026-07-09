@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import SEO from '../components/SEO';
 const Gallery = () => {
   const [gallery, setGallery] = useState([]);
 
@@ -12,8 +12,14 @@ const Gallery = () => {
 
   return (
     <>
+      <SEO 
+        title="Gallery - Our Water Treatment Projects"
+        description="View our portfolio of water treatment installations across Kenya. Industrial plants, commercial systems, residential solutions, and more."
+        keywords="water treatment projects Kenya, water purification installations, Bluewell Horizon gallery"
+        url="https://www.bluewellhorizonlimited.com/gallery"
+      />
       {/* Header */}
-      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(6, 17, 28, 0.7), rgba(6, 17, 28, 0.9)), url('/images/bg-header.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
+      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(147, 149, 150, 0.25), rgba(14, 17, 28, 0.9)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
         <div className="container py-5">
           <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffff' }}>Our Gallery</h1>
           <p className="lead mb-0" style={{ color: '#cbd5e0' }}>Projects across residential estates, commercial facilities, and industrial plants.</p>

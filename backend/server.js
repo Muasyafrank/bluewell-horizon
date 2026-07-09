@@ -14,12 +14,15 @@ require('./models/Order');
 require('./models/OrderItem');
 require('./models/Technology');
 require('./models/ProcessStep');
+require('./models/Customer')
 
 // Import Routes
+const adminManagementRoutes = require('./routes/adminManagementRoutes')
 const authRoutes = require('./routes/authRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const uploadRoutes = require('./routes/uploadRoutes'); // <-- MAKE SURE THIS IS HERE
+const uploadRoutes = require('./routes/uploadRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 
 dotenv.config();
 const app = express();
@@ -28,17 +31,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve Uploaded Images Statically <-- ADD THESE TWO LINES
+
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/admin/upload', uploadRoutes); // <-- ADD THIS LINE
-
+app.use('/api/admin/upload', uploadRoutes); 
+app.use('/api/admin', adminManagementRoutes);
 app.get('/', (req, res) => res.send('Bluewell Horizon API is running...'));
-
+app.use('/api/customers', customerRoutes);
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

@@ -1,6 +1,7 @@
 {
-  "short_name": "Bluewell Horizon",
+  "short_name": "Bluewell",
   "name": "Bluewell Horizon Limited",
+  "description": "Trusted provider of innovative water treatment technologies in Kenya",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,18 +9,21 @@
       "type": "image/x-icon"
     },
     {
-      "src": "logo.png",
+      "src": "logo192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo.png",
+      "src": "logo512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#2fa5b6",
+  "background_color": "#0b2540",
+  "orientation": "portrait-primary",
+  "categories": ["business", "utilities"],
+  "lang": "en-KE"
 }

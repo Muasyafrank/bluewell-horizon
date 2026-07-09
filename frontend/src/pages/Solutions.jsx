@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import React, { useState, useEffect } from 'react';
 import * as FaIcons from 'react-icons/fa';
 import { Link } from 'react-router-dom';
@@ -23,8 +24,15 @@ const Solutions = () => {
 
   return (
     <>
+
+      <SEO 
+        title="Our Services & Technologies - Water Treatment Solutions"
+        description="Explore our comprehensive water treatment services including purification, bottling plants, desalination, disinfection, and advanced technologies like RO, UV, and EDI systems."
+        keywords="water purification services, RO systems Kenya, UV sterilization, water bottling solutions, desalination systems, EDI water treatment"
+        url="https://www.bluewellhorizonlimited.com/services"
+      />
       {/* Header */}
-      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(6, 17, 28, 0.7), rgba(6, 17, 28, 0.9)), url('/images/gallery-4.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
+      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(147, 149, 150, 0.25), rgba(14, 17, 28, 0.9)), url('/images/gallery-4.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
         <div className="container py-5">
           <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffff' }}>Comprehensive Services & <span className="fst-italic" style={{ color: '#7dd3e3' }}>Advanced Technologies</span></h1>
           <p className="lead mb-0" style={{ color: '#cbd5e0', maxWidth: '700px' }}>We combine industry-leading water treatment technologies with expert engineering to deliver tailored solutions.</p>

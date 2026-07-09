@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const Product = require('../models/Product');
@@ -9,6 +10,17 @@ exports.checkout = async (req, res) => {
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Cart is empty' });
+    }
+    let customerId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        customerId = decoded.id; // Link order to customer
+      } catch (err) {
+        // Token invalid or expired, proceed as guest
+      }
     }
 
     // 1. Calculate total and verify prices
@@ -35,7 +47,8 @@ exports.checkout = async (req, res) => {
     // 3. Create Order
     const order = await Order.create({
       orderNumber, customerName, customerEmail, customerPhone, 
-      shippingAddress, city, totalAmount, paymentMethod, notes
+      shippingAddress, city, totalAmount, paymentMethod, notes,
+      customerId
     });
 
     // 4. Create Order Items

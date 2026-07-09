@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCreditCard, FaMoneyBillWave, FaPhone } from 'react-icons/fa';
+import { useCustomer } from '../context/CustomerContext';
 
 const Checkout = () => {
+  const { token, isAuthenticated, customer } = useCustomer();
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,6 +27,18 @@ const Checkout = () => {
     }
   }, [navigate]);
 
+  // Auto-fill form if customer is logged in
+  useEffect(() => {
+    if (isAuthenticated && customer) {
+      setFormData(prev => ({
+        ...prev,
+        customerName: customer.name || '',
+        customerEmail: customer.email || '',
+        customerPhone: customer.phone || ''
+      }));
+    }
+  }, [isAuthenticated, customer]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -34,27 +48,24 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/products/checkout', {
+      const headers = { 'Content-Type': 'application/json' };
+      if (isAuthenticated && token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch('http://localhost:5000/api/orders/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          items: cart.map(item => ({
-            productId: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price
-          }))
-        }),
+        headers,
+        body: JSON.stringify({ ...formData, items: cart }) // Fixed: cart instead of cartItems
       });
 
-      const data = await response.json();
+      const data = await res.json(); // Fixed: res instead of response
 
-      if (response.ok) {
+      if (res.ok) { // Fixed: res instead of response
         localStorage.removeItem('cart');
         navigate('/order-success', { state: { orderNumber: data.orderNumber } });
       } else {
-        alert('Error placing order. Please try again.');
+        alert(data.message || 'Error placing order. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);

@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaShoppingCart, FaFilter, FaSearch } from 'react-icons/fa';
@@ -83,6 +84,12 @@ const Shop = () => {
 
   return (
     <>
+     <SEO 
+        title="Shop - Water Treatment Products & Equipment"
+        description="Browse our range of water treatment products including RO systems, UV sterilizers, water softeners, and complete bottling plant packages. Quality equipment at competitive prices."
+        keywords="buy water purifier Kenya, RO system price, UV sterilizer Kenya, water softener Nairobi, water treatment equipment"
+        url="https://www.bluewellhorizonlimited.com/shop"
+      />
       {/* Page Header */}
       <section className="py-5" style={{ }}>
         <div className="container py-5">

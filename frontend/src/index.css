@@ -86,6 +86,8 @@ html {
   transition: all 0.3s ease;
   text-align: center;
 }
+/* Loading spinner animation */
+
 
 /* Navbar state when scrolled down */
 .navbar-dark-custom.scrolled {
@@ -154,4 +156,107 @@ html {
   height: 48px;
   width: auto;
   object-fit: contain;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+/* Marquee Animation */
+.marquee-container {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 20px 0;
+}
+
+.marquee-content {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  animation: marquee 30s linear infinite;
+  white-space: nowrap;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.marquee-divider {
+  color: #2fa5b6;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Pause animation on hover */
+.marquee-container:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .marquee-content {
+    gap: 30px;
+    animation-duration: 20s;
+  }
+  
+  .marquee-item {
+    font-size: 0.9rem;
+  }
+}
+/* Performance Optimizations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Image optimization */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Reduce layout shift */
+img, video {
+  aspect-ratio: auto;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Font loading optimization */
+body {
+  font-display: swap;
+}
+
+/* Critical rendering path */
+.container {
+  contain: layout style;
 }
