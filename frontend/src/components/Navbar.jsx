@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation, Link } from 'react-router-dom';
-import { FaBars, FaTimes, FaShoppingCart, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { FaBars, FaTimes, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
 import { useCustomer } from '../context/CustomerContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, customer, logout } = useCustomer(); // Fixed: isAuthenticated
+  const { isAuthenticated, customer, logout } = useCustomer();
+  const dropdownRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -28,10 +31,36 @@ const Navbar = () => {
 
   useEffect(() => {
     setIsOpen(false);
+    setShowDropdown(false);
   }, [location]);
+
+  // Handle hover - show dropdown with slight delay
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    setShowDropdown(true);
+  };
+
+  // Handle mouse leave - hide dropdown with delay for smooth UX
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowDropdown(false);
+    }, 200); // 200ms delay for smoother transition
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
+    setShowDropdown(false);
     setIsOpen(false);
   };
 
@@ -41,6 +70,7 @@ const Navbar = () => {
     { name: 'Solutions', path: '/services' },
     { name: 'Shop', path: '/shop' },
     { name: 'Gallery', path: '/gallery' },
+    { name: 'Requset Quote', path: '/quote'},
     { name: 'Contact', path: '/contact' }
   ];
 
@@ -72,25 +102,73 @@ const Navbar = () => {
             )}
           </NavLink>
 
-          {/* Customer Auth Section */}
+          {/* Customer Account Dropdown - Desktop Only, Hover Activated */}
           {isAuthenticated ? (
-            <div className="d-flex align-items-center gap-2 ms-2">
-              <NavLink to="/account" className="nav-link-custom d-flex align-items-center gap-2">
+            <div 
+              className="position-relative d-none d-lg-block" 
+              ref={dropdownRef}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button 
+                className="nav-link-custom d-flex align-items-center gap-2 border-0 bg-transparent"
+                style={{ cursor: 'pointer' }}
+                aria-expanded={showDropdown}
+              >
                 <FaUserCircle size={20} style={{ color: '#2fa5b6' }} />
                 <span className="fw-semibold" style={{ color: '#ffffff' }}>
                   {customer?.name?.split(' ')[0] || 'Account'}
                 </span>
-              </NavLink>
-              <button 
-                onClick={handleLogout}
-                className="btn btn-sm btn-outline-light rounded-pill px-3"
-                style={{ borderColor: '#2fa5b6', color: '#2fa5b6' }}
-              >
-                <FaSignOutAlt className="me-1" /> Logout
+                <FaChevronDown size={12} style={{ color: '#2fa5b6', transition: 'transform 0.2s', transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)' }} />
               </button>
+
+              {/* Dropdown Menu - Shows on Hover */}
+              <div 
+                className="position-absolute end-0 mt-2 p-2 rounded-3 shadow-lg"
+                style={{ 
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e2e8f0',
+                  minWidth: '220px',
+                  zIndex: 1000,
+                  opacity: showDropdown ? 1 : 0,
+                  visibility: showDropdown ? 'visible' : 'hidden',
+                  transform: showDropdown ? 'translateY(0)' : 'translateY(-10px)',
+                  transition: 'opacity 0.2s ease, transform 0.2s ease, visibility 0.2s'
+                }}
+              >
+                {/* Email Display - Only in Dropdown */}
+                <div className="px-3 py-2 mb-2" style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <small className="text-muted d-block">Signed in as</small>
+                  <small className="fw-semibold d-block text-truncate" style={{ color: '#0b2540', maxWidth: '190px' }}>
+                    {customer?.email}
+                  </small>
+                </div>
+                
+                <NavLink 
+                  to="/account" 
+                  className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-2"
+                  style={{ color: '#0b2540', transition: 'all 0.2s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f9fa'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <FaUserCircle style={{ color: '#2fa5b6' }} />
+                  <span>My Account</span>
+                </NavLink>
+                
+                <button 
+                  onClick={handleLogout}
+                  className="d-flex align-items-center gap-2 px-3 py-2 w-100 text-start border-0 bg-transparent rounded-2"
+                  style={{ color: '#dc3545', transition: 'all 0.2s', cursor: 'pointer' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fff5f5'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <FaSignOutAlt />
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
           ) : (
-            <NavLink to="/login" className="nav-cta-btn ms-2">
+            <NavLink to="/login" className="nav-cta-btn ms-2 d-none d-lg-inline-block">
               <FaUserCircle className="me-1" /> Login
             </NavLink>
           )}
@@ -121,19 +199,26 @@ const Navbar = () => {
             <FaShoppingCart className="me-2" /> Cart ({cartCount})
           </NavLink>
 
-          {/* Mobile Customer Auth Section */}
+          {/* Mobile Customer Account Section - Email REMOVED */}
           {isAuthenticated ? (
             <>
+              <div className="py-2 mt-2" style={{ borderTop: '1px solid var(--border-light)' }}>
+                <small className="fw-semibold d-block mb-2" style={{ color: '#ffffff' }}>
+                  <FaUserCircle className="me-2" style={{ color: '#2fa5b6' }} />
+                  {customer?.name}
+                </small>
+              </div>
               <NavLink to="/account" className="nav-link-custom d-block py-2 d-flex align-items-center gap-2">
                 <FaUserCircle style={{ color: '#2fa5b6' }} />
                 <span className="fw-semibold">My Account</span>
               </NavLink>
               <button 
                 onClick={handleLogout}
-                className="nav-link-custom d-block py-2 text-start w-100 border-0 bg-transparent"
-                style={{ color: 'inherit' }}
+                className="nav-link-custom d-block py-2 text-start w-100 border-0 bg-transparent d-flex align-items-center gap-2"
+                style={{ color: '#dc3545' }}
               >
-                <FaSignOutAlt className="me-2" /> Logout
+                <FaSignOutAlt />
+                <span>Logout</span>
               </button>
             </>
           ) : (

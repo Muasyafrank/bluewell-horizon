@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCreditCard, FaMoneyBillWave, FaPhone } from 'react-icons/fa';
+import { FaCreditCard, FaMoneyBillWave, FaPhoneAlt } from 'react-icons/fa';
 import { useCustomer } from '../context/CustomerContext';
+import { toastSuccess,toastError, toastLoading, toastDismiss } from '../utils/toast';
 
 const Checkout = () => {
   const { token, isAuthenticated, customer } = useCustomer();
@@ -46,6 +47,8 @@ const Checkout = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    const loadingToast = toastLoading('Processing your order...');
 
     try {
       const headers = { 'Content-Type': 'application/json' };
@@ -56,20 +59,23 @@ const Checkout = () => {
       const res = await fetch('http://localhost:5000/api/orders/checkout', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ ...formData, items: cart }) // Fixed: cart instead of cartItems
+        body: JSON.stringify({ ...formData, items: cart })
       });
 
-      const data = await res.json(); // Fixed: res instead of response
+      const data = await res.json();
 
-      if (res.ok) { // Fixed: res instead of response
+      if (res.ok) {
+        toastDismiss(loadingToast);
+        toastSuccess(`Order placed successfully! Order #${data.orderNumber}`);
         localStorage.removeItem('cart');
-        navigate('/order-success', { state: { orderNumber: data.orderNumber } });
+        setTimeout(() => navigate('/order-success', { state: { orderNumber: data.orderNumber } }), 1000);
       } else {
-        alert(data.message || 'Error placing order. Please try again.');
+        toastDismiss(loadingToast);
+        toastError(data.message || 'Error placing order. Please try again.');
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Network error. Please try again.');
+      toastDismiss(loadingToast);
+      toastError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -180,7 +186,7 @@ const Checkout = () => {
                     />
                     <label className="form-check-label w-100 ms-2" htmlFor="mpesa">
                       <div className="d-flex align-items-center gap-2">
-                        <FaPhone style={{ color: '#2fa5b6' }} />
+                        <FaPhoneAlt style={{ color: '#2fa5b6' }} />
                         <div>
                           <strong className="d-block" style={{ color: '#0b2540' }}>M-Pesa</strong>
                           <small className="text-muted">Pay with M-Pesa (Paybill or Till Number)</small>

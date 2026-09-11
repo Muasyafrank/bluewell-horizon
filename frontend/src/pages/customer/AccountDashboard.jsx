@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCustomer } from '../../context/CustomerContext';
 import { FaSignOutAlt, FaShoppingBag, FaUser, FaBox, FaCheckCircle, FaTruck, FaClock, FaTimesCircle, FaEnvelope, FaPhone } from 'react-icons/fa';
+import WaterLoader from '../../components/WaterLoader';
 
 const AccountDashboard = () => {
   const { token, customer, logout } = useCustomer();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('orders');
 
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -51,6 +52,11 @@ const AccountDashboard = () => {
       </span>
     );
   };
+
+  // ✅ NOW we can return early AFTER all hooks have been called
+  if (loading) {
+    return <WaterLoader text="Loading your Orders..." />;
+  }
 
   return (
     <div className="min-vh-100" style={{ backgroundColor: '#f8fafc', paddingTop: '120px' }}>
@@ -94,12 +100,7 @@ const AccountDashboard = () => {
         <div className="p-4 rounded-4" style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
           <h5 className="fw-bold mb-4" style={{ color: '#0b2540' }}>Order History</h5>
           
-          {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status"></div>
-              <p className="text-muted mt-3">Loading your orders...</p>
-            </div>
-          ) : orders.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="text-center py-5">
               <FaBox size={48} className="mb-3" style={{ color: '#cbd5e0' }} />
               <h5 className="fw-bold" style={{ color: '#0b2540' }}>No orders yet</h5>

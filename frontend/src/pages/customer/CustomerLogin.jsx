@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCustomer } from '../../context/CustomerContext';
 import { FaLock, FaEnvelope } from 'react-icons/fa';
+import { toastSuccess, toastError } from '../../utils/toast';
 
 const CustomerLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useCustomer();
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ const CustomerLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
       const res = await fetch('http://localhost:5000/api/customers/login', {
         method: 'POST',
@@ -21,14 +22,16 @@ const CustomerLogin = () => {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
+      
       if (res.ok) {
         login(data.token, data.customer);
-        navigate('/account');
+        toastSuccess(`Welcome back, ${data.customer.name}!`);
+        setTimeout(() => navigate('/'), 500);
       } else {
-        setError(data.message);
+        toastError(data.message || 'Invalid email or password');
       }
     } catch (err) {
-      setError('Network error');
+      toastError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -41,7 +44,6 @@ const CustomerLogin = () => {
           <h3 className="fw-bold" style={{ color: '#0b2540' }}>Welcome Back</h3>
           <p className="text-muted small">Log in to view your orders and account details.</p>
         </div>
-        {error && <div className="alert alert-danger py-2 small">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label small fw-semibold">Email Address</label>

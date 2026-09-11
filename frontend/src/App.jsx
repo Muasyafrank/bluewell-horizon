@@ -1,17 +1,21 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import StructuredData from './components/StructuredData';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './index.css';
-import { CustomerProvider } from './context/CustomerContext';
-import CustomerProtectedRoute from './components/layout/CustomerProtectedRoute';
-import { AdminProvider } from './context/AdminContext';
-import ProtectedRoute from './components/layout/ProtectedRoute';
-import Layout from './components/layout/Layout';
 
-// Lazy load pages for performance
+import { AdminProvider } from './context/AdminContext';
+import { CustomerProvider } from './context/CustomerContext';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import CustomerProtectedRoute from './components/layout/CustomerProtectedRoute';
+import Layout from './components/layout/Layout';
+import StructuredData from './components/StructuredData';
+import WaterLoader from './components/WaterLoader'; // <-- ADD THIS
+
+// Lazy load pages
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const Solutions = lazy(() => import('./pages/Solutions'));
@@ -26,39 +30,34 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const CustomerLogin = lazy(() => import('./pages/customer/CustomerLogin'));
 const CustomerRegister = lazy(() => import('./pages/customer/CustomerRegister'));
 const AccountDashboard = lazy(() => import('./pages/customer/AccountDashboard'));
+const Quote = lazy(() => import('./pages/Quote'));
 
-// Loading fallback component
-const LoadingSpinner = () => (
-  <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: '#f8fafc' }}>
-    <div className="text-center">
-      <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
-        <span className="visually-hidden">Loading...</span>
-      </div>
-      <p className="text-muted">Loading...</p>
-    </div>
-  </div>
-);
+// Replace LoadingSpinner with WaterLoader
+const LoadingFallback = () => <WaterLoader text="Loading..." />;
 
 function App() {
   return (
     <HelmetProvider>
       <AdminProvider>
         <CustomerProvider>
-        <Router>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Home />} />
-                <Route path="about" element={<About />} />
-                <Route path="services" element={<Solutions />} />
-                <Route path="technologies" element={<Navigate to="/services" replace />} />
-                <Route path="gallery" element={<Gallery />} />
-                <Route path="shop" element={<Shop />} />
-                <Route path="cart" element={<Cart />} />
-                <Route path="checkout" element={<Checkout />} />
-                <Route path="order-success" element={<OrderSuccess />} />
-                <Route path="contact" element={<Contact />} />
+          <Router>
+            <StructuredData />
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Home />} />
+                  <Route path="about" element={<About />} />
+                  <Route path="services" element={<Solutions />} />
+                  <Route path="technologies" element={<Navigate to="/services" replace />} />
+                  <Route path="gallery" element={<Gallery />} />
+                  <Route path="shop" element={<Shop />} />
+                  <Route path="cart" element={<Cart />} />
+                  <Route path="checkout" element={<Checkout />} />
+                  <Route path="order-success" element={<OrderSuccess />} />
+                  <Route path="contact" element={<Contact />} />
+                  <Route path="quote" element={<Quote />} />
+                </Route>
+
                 <Route path="/login" element={<CustomerLogin />} />
                 <Route path="/register" element={<CustomerRegister />} />
                 <Route path="/account" element={
@@ -66,19 +65,29 @@ function App() {
                     <AccountDashboard />
                   </CustomerProtectedRoute>
                 } />
-              </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </Suspense>
-          <StructuredData/>
-        </Router>
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Suspense>
+            
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="colored"
+            />
+          </Router>
         </CustomerProvider>
       </AdminProvider>
     </HelmetProvider>

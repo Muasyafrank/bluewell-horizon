@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaTrash, FaShoppingCart, FaArrowRight } from 'react-icons/fa';
-
+import { toastSuccess, toastWarning } from '../utils/toast';
 const Cart = () => {
   const [cart, setCart] = useState([]);
   const navigate = useNavigate();
@@ -13,20 +13,27 @@ const Cart = () => {
     }
   }, []);
 
-  const removeFromCart = (productId) => {
-    const updatedCart = cart.filter(item => item.id !== productId);
-    setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-  };
+  
 
-  const updateQuantity = (productId, newQuantity) => {
-    if (newQuantity < 1) return;
+  const updateQuantity =  (id,newQuantity) =>{
+    if (newQuantity < 1) {
+      toastWarning('Quantity must be at least 1');
+      return;
+    }
     const updatedCart = cart.map(item =>
-      item.id === productId ? { ...item, quantity: newQuantity } : item
+      item.id === id ? { ...item,quantity: newQuantity} : item
     );
     setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    localStorage.setItem('cart',JSON.stringify(updatedCart));
+    toastSuccess('Cart Updated');
   };
+
+  const removeItem = (id) =>{
+    const updatedCart = cart.filter(item => item.id !== id);
+    setCart(updatedCart);
+    localStorage.setItem('cart',JSON.stringify(updatedCart));
+    toastSuccess('Item removed from cart');
+  }
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -95,7 +102,7 @@ const Cart = () => {
                           </div>
                           <button
                             className="btn btn-sm text-danger ms-auto"
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeItem(item.id)}
                           >
                             <FaTrash /> Remove
                           </button>

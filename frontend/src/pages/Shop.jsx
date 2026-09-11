@@ -1,7 +1,9 @@
 import SEO from '../components/SEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaShoppingCart, FaFilter, FaSearch } from 'react-icons/fa';
+import { FaShoppingCart, FaSearch } from 'react-icons/fa';
+import WaterLoader from '../components/WaterLoader';
+import { toastSuccess } from '../utils/toast';
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
@@ -11,6 +13,7 @@ const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
 
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
     fetchProducts();
     const savedCart = localStorage.getItem('cart');
@@ -63,38 +66,36 @@ const Shop = () => {
       );
       setCart(updatedCart);
       localStorage.setItem('cart', JSON.stringify(updatedCart));
+      toastSuccess(`Added another ${product.name} to cart`);
     } else {
       const updatedCart = [...cart, { ...product, quantity: 1 }];
       setCart(updatedCart);
       localStorage.setItem('cart', JSON.stringify(updatedCart));
+      toastSuccess(`${product.name} added to cart`);
     }
   };
 
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
+  // ✅ NOW we can return early AFTER all hooks have been called
   if (loading) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-info" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+    return <WaterLoader text="Loading products..." />;
   }
 
   return (
     <>
-     <SEO 
+      <SEO 
         title="Shop - Water Treatment Products & Equipment"
         description="Browse our range of water treatment products including RO systems, UV sterilizers, water softeners, and complete bottling plant packages. Quality equipment at competitive prices."
         keywords="buy water purifier Kenya, RO system price, UV sterilizer Kenya, water softener Nairobi, water treatment equipment"
         url="https://www.bluewellhorizonlimited.com/shop"
       />
+      
       {/* Page Header */}
-      <section className="py-5" style={{ }}>
+      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
         <div className="container py-5">
           <div className="d-flex align-items-center gap-3 mb-4">
-            <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
+            <div style={{ width: '40px', height: '1px', backgroundColor: '#2fa5b6' }}></div>
             <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>
               Shop
             </span>
@@ -124,7 +125,7 @@ const Shop = () => {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ borderRadius: '12px 0 0 12px' }}
+                  style={{ borderRadius: '0 12px 12px 0' }}
                 />
               </div>
             </div>
@@ -172,7 +173,7 @@ const Shop = () => {
                   >
                     <div style={{ height: '250px', overflow: 'hidden' }}>
                       <img 
-                        src={product.image} 
+                        src={`http://localhost:5000${product.image}`}
                         alt={product.name}
                         className="w-100 h-100"
                         style={{ objectFit: 'cover' }}
@@ -212,7 +213,7 @@ const Shop = () => {
           {/* Cart Summary */}
           {cart.length > 0 && (
             <div className="mt-5 p-4 rounded-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-              <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                   <h5 className="fw-bold mb-1" style={{ color: '#0b2540' }}>
                     Shopping Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)
@@ -221,7 +222,7 @@ const Shop = () => {
                     Total: KES {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}
                   </p>
                 </div>
-                <Link to="/checkout" className="btn btn-primary rounded-pill px-4" style={{ backgroundColor: '#2fa5b6', border: 'none' }}>
+                <Link to="/checkout" className="btn text-white rounded-pill px-4" style={{ backgroundColor: '#2fa5b6', border: 'none' }}>
                   Proceed to Checkout
                 </Link>
               </div>

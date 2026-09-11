@@ -10,7 +10,7 @@ const AboutSection = () => (
   <>
     {/* About Us Intro Section */}
     <section className="py-5" style={{ 
-      backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95)), url('/images/about-bg.jpg')`,
+      backgroundImage: `linear-gradient(rgba(13, 13, 13, 0.95), rgba(32, 34, 36, 0.95)), url('/images/gallery-3.png')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'

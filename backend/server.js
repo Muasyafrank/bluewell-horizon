@@ -14,7 +14,9 @@ require('./models/Order');
 require('./models/OrderItem');
 require('./models/Technology');
 require('./models/ProcessStep');
-require('./models/Customer')
+require('./models/Customer');
+require('./models/Quote');
+
 
 // Import Routes
 const adminManagementRoutes = require('./routes/adminManagementRoutes')
@@ -23,6 +25,8 @@ const publicRoutes = require('./routes/publicRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const quoteRoutes = require('./routes/quoteRoutes');
+
 
 dotenv.config();
 const app = express();
@@ -42,6 +46,7 @@ app.use('/api/admin/upload', uploadRoutes);
 app.use('/api/admin', adminManagementRoutes);
 app.get('/', (req, res) => res.send('Bluewell Horizon API is running...'));
 app.use('/api/customers', customerRoutes);
+app.use('/api/quotes', quoteRoutes);
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

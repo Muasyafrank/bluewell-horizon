@@ -32,7 +32,7 @@ const Solutions = () => {
         url="https://www.bluewellhorizonlimited.com/services"
       />
       {/* Header */}
-      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(147, 149, 150, 0.25), rgba(14, 17, 28, 0.9)), url('/images/gallery-4.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
+      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(13, 13, 13, 0.95), rgba(32, 34, 36, 0.95)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
         <div className="container py-5">
           <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffff' }}>Comprehensive Services & <span className="fst-italic" style={{ color: '#7dd3e3' }}>Advanced Technologies</span></h1>
           <p className="lead mb-0" style={{ color: '#cbd5e0', maxWidth: '700px' }}>We combine industry-leading water treatment technologies with expert engineering to deliver tailored solutions.</p>

@@ -1,9 +1,10 @@
 import SEO from '../components/SEO';
 import React, { useState } from 'react';
 import { 
-  FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaGlobe, 
+  FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaClock, FaGlobe, 
   FaPaperPlane, FaSpinner, FaCheckCircle, FaDirections 
 } from 'react-icons/fa';
+import { toastSuccess, toastError } from '../utils/toast';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -17,10 +18,9 @@ const Contact = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     
     try {
       const res = await fetch('http://localhost:5000/api/contact', {
@@ -30,14 +30,13 @@ const Contact = () => {
       });
       
       if (res.ok) {
-        setSuccess(true);
+        toastSuccess('Thank you! Your message has been sent successfully. We\'ll get back to you within 24 hours.');
         setFormData({ name: '', email: '', phone: '', service: '', message: '' });
-        setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError('Failed to send message. Please try again.');
+        toastError('Failed to send message. Please try again.');
       }
     } catch (err) {
-      setError('Network error. Please check your connection.');
+      toastError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,7 @@ const Contact = () => {
             </div>
             <div className="marquee-divider">•</div>
             <div className="marquee-item">
-              <FaPhone className="me-2" style={{ color: '#2fa5b6' }} />
+              <FaPhoneAlt className="me-2" style={{ color: '#2fa5b6' }} />
               <span style={{ color: '#ffffff', fontWeight: '600' }}>Phone:</span>
               <span style={{ color: '#cbd5e0' }} className="ms-2">0721-633-223 / 0731-836-349</span>
             </div>
@@ -111,7 +110,7 @@ const Contact = () => {
             </div>
             <div className="marquee-divider">•</div>
             <div className="marquee-item">
-              <FaPhone className="me-2" style={{ color: '#2fa5b6' }} />
+              <FaPhoneAlt className="me-2" style={{ color: '#2fa5b6' }} />
               <span style={{ color: '#ffffff', fontWeight: '600' }}>Phone:</span>
               <span style={{ color: '#cbd5e0' }} className="ms-2">0721-633-223 / 0731-836-349</span>
             </div>

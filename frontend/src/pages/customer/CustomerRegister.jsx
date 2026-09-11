@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCustomer } from '../../context/CustomerContext';
 import { FaUser, FaEnvelope, FaLock, FaPhone } from 'react-icons/fa';
+import { toastSuccess, toastError } from '../../utils/toast';
 
 const CustomerRegister = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useCustomer();
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ const CustomerRegister = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
       const res = await fetch('http://localhost:5000/api/customers/register', {
         method: 'POST',
@@ -22,14 +23,16 @@ const CustomerRegister = () => {
         body: JSON.stringify(formData)
       });
       const data = await res.json();
+      
       if (res.ok) {
         login(data.token, data.customer);
-        navigate('/account');
+        toastSuccess(`Welcome to Bluewell Horizon, ${data.customer.name}!`);
+        setTimeout(() => navigate('/'), 500);
       } else {
-        setError(data.message);
+        toastError(data.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Network error');
+      toastError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +45,6 @@ const CustomerRegister = () => {
           <h3 className="fw-bold" style={{ color: '#0b2540' }}>Create Account</h3>
           <p className="text-muted small">Join us to track your orders and get exclusive support.</p>
         </div>
-        {error && <div className="alert alert-danger py-2 small">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label small fw-semibold">Full Name</label>
