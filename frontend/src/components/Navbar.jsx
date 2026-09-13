@@ -1,3 +1,5 @@
+import { CART_UPDATE_EVENT, getCartCount } from '../utils/cart';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { FaBars, FaTimes, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
@@ -21,12 +23,22 @@ const Navbar = () => {
 
   useEffect(() => {
     const updateCartCount = () => {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+      setCartCount(getCartCount());
     };
+
+    // Initial count
     updateCartCount();
+
+    // Listen for custom cart update events (from same tab)
+    window.addEventListener(CART_UPDATE_EVENT, updateCartCount);
+
+    // Also listen for storage events (from other tabs)
     window.addEventListener('storage', updateCartCount);
-    return () => window.removeEventListener('storage', updateCartCount);
+
+    return () => {
+      window.removeEventListener(CART_UPDATE_EVENT, updateCartCount);
+      window.removeEventListener('storage', updateCartCount);
+    };
   }, []);
 
   useEffect(() => {
@@ -70,7 +82,7 @@ const Navbar = () => {
     { name: 'Solutions', path: '/services' },
     { name: 'Shop', path: '/shop' },
     { name: 'Gallery', path: '/gallery' },
-    { name: 'Requset Quote', path: '/quote'},
+    { name: 'Requset Quote', path: '/quote' },
     { name: 'Contact', path: '/contact' }
   ];
 
@@ -91,12 +103,12 @@ const Navbar = () => {
               {item.name}
             </NavLink>
           ))}
-          
+
           <NavLink to="/cart" className="nav-link-custom position-relative">
             <FaShoppingCart size={20} />
             {cartCount > 0 && (
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" 
-                    style={{ backgroundColor: '#2fa5b6', fontSize: '0.65rem', padding: '2px 5px' }}>
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill"
+                style={{ backgroundColor: '#2fa5b6', fontSize: '0.65rem', padding: '2px 5px' }}>
                 {cartCount}
               </span>
             )}
@@ -104,13 +116,13 @@ const Navbar = () => {
 
           {/* Customer Account Dropdown - Desktop Only, Hover Activated */}
           {isAuthenticated ? (
-            <div 
-              className="position-relative d-none d-lg-block" 
+            <div
+              className="position-relative d-none d-lg-block"
               ref={dropdownRef}
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
-              <button 
+              <button
                 className="nav-link-custom d-flex align-items-center gap-2 border-0 bg-transparent"
                 style={{ cursor: 'pointer' }}
                 aria-expanded={showDropdown}
@@ -123,10 +135,10 @@ const Navbar = () => {
               </button>
 
               {/* Dropdown Menu - Shows on Hover */}
-              <div 
+              <div
                 className="position-absolute end-0 mt-2 p-2 rounded-3 shadow-lg"
-                style={{ 
-                  backgroundColor: '#ffffff', 
+                style={{
+                  backgroundColor: '#ffffff',
                   border: '1px solid #e2e8f0',
                   minWidth: '220px',
                   zIndex: 1000,
@@ -143,9 +155,9 @@ const Navbar = () => {
                     {customer?.email}
                   </small>
                 </div>
-                
-                <NavLink 
-                  to="/account" 
+
+                <NavLink
+                  to="/account"
                   className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-2"
                   style={{ color: '#0b2540', transition: 'all 0.2s' }}
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f9fa'; }}
@@ -154,8 +166,8 @@ const Navbar = () => {
                   <FaUserCircle style={{ color: '#2fa5b6' }} />
                   <span>My Account</span>
                 </NavLink>
-                
-                <button 
+
+                <button
                   onClick={handleLogout}
                   className="d-flex align-items-center gap-2 px-3 py-2 w-100 text-start border-0 bg-transparent rounded-2"
                   style={{ color: '#dc3545', transition: 'all 0.2s', cursor: 'pointer' }}
@@ -194,7 +206,7 @@ const Navbar = () => {
               {item.name}
             </NavLink>
           ))}
-          
+
           <NavLink to="/cart" className="nav-link-custom d-block py-2">
             <FaShoppingCart className="me-2" /> Cart ({cartCount})
           </NavLink>
@@ -212,7 +224,7 @@ const Navbar = () => {
                 <FaUserCircle style={{ color: '#2fa5b6' }} />
                 <span className="fw-semibold">My Account</span>
               </NavLink>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="nav-link-custom d-block py-2 text-start w-100 border-0 bg-transparent d-flex align-items-center gap-2"
                 style={{ color: '#dc3545' }}

@@ -1,25 +1,23 @@
-import SEO from '../components/SEO';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaShoppingCart, FaSearch } from 'react-icons/fa';
+import { FaShoppingCart, FaSearch, FaFilter, FaPlus, FaCheck } from 'react-icons/fa';
+import SEO from '../components/SEO';
 import WaterLoader from '../components/WaterLoader';
+import { addToCart as addProductToCart, getCart, getCartCount, getCartTotal } from '../utils/cart';
 import { toastSuccess } from '../utils/toast';
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [cart, setCart] = useState([]);
 
-  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  // ✅ ALL HOOKS FIRST - before any conditional returns
   useEffect(() => {
     fetchProducts();
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+    setCart(getCart());
   }, []);
 
   useEffect(() => {
@@ -31,9 +29,9 @@ const Shop = () => {
       const response = await fetch('http://localhost:5000/api/products');
       const data = await response.json();
       setProducts(data);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -55,29 +53,24 @@ const Shop = () => {
     setFilteredProducts(filtered);
   };
 
-  const addToCart = (product) => {
-    const existingItem = cart.find(item => item.id === product.id);
+  const handleAddToCart = (product) => {
+    const result = addProductToCart(product);
+    setCart(getCart());
     
-    if (existingItem) {
-      const updatedCart = cart.map(item =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-      setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-      toastSuccess(`Added another ${product.name} to cart`);
+    if (result.updated) {
+      toastSuccess(`Added another ${product.name} to cart (${result.quantity} in cart)`);
     } else {
-      const updatedCart = [...cart, { ...product, quantity: 1 }];
-      setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
       toastSuccess(`${product.name} added to cart`);
     }
   };
 
+  const isInCart = (productId) => {
+    return cart.some(item => item.id === productId);
+  };
+
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
-  // ✅ NOW we can return early AFTER all hooks have been called
+  // ✅ EARLY RETURN AFTER ALL HOOKS
   if (loading) {
     return <WaterLoader text="Loading products..." />;
   }
@@ -86,11 +79,11 @@ const Shop = () => {
     <>
       <SEO 
         title="Shop - Water Treatment Products & Equipment"
-        description="Browse our range of water treatment products including RO systems, UV sterilizers, water softeners, and complete bottling plant packages. Quality equipment at competitive prices."
+        description="Browse our range of water treatment products including RO systems, UV sterilizers, water softeners, and complete bottling plant packages. Quality equipment at competitive prices in Kenya."
         keywords="buy water purifier Kenya, RO system price, UV sterilizer Kenya, water softener Nairobi, water treatment equipment"
         url="https://www.bluewellhorizonlimited.com/shop"
       />
-      
+
       {/* Page Header */}
       <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
         <div className="container py-5">
@@ -125,106 +118,164 @@ const Shop = () => {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ borderRadius: '0 12px 12px 0' }}
+                  style={{ borderRadius: '0 12px 12px 0', padding: '12px 16px' }}
                 />
               </div>
             </div>
             <div className="col-md-6 mb-3">
-              <select
-                className="form-select"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                style={{ borderRadius: '12px' }}
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0">
+                  <FaFilter style={{ color: '#2fa5b6' }} />
+                </span>
+                <select
+                  className="form-select border-start-0"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  style={{ borderRadius: '0 12px 12px 0', padding: '12px 16px' }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+          </div>
+
+          {/* Results Count */}
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <p className="text-muted mb-0">
+              Showing <strong>{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'product' : 'products'}
+              {selectedCategory !== 'All' && <span> in <strong>{selectedCategory}</strong></span>}
+            </p>
+            {cart.length > 0 && (
+              <Link to="/cart" className="btn text-white rounded-pill px-4" style={{ backgroundColor: '#2fa5b6', border: 'none' }}>
+                <FaShoppingCart className="me-2" /> View Cart ({getCartCount()})
+              </Link>
+            )}
           </div>
 
           {/* Products Grid */}
           <div className="row g-4">
             {filteredProducts.length === 0 ? (
               <div className="col-12 text-center py-5">
-                <p className="text-muted">No products found.</p>
+                <FaSearch size={48} className="mb-3" style={{ color: '#cbd5e0' }} />
+                <h5 className="fw-bold" style={{ color: '#0b2540' }}>No products found</h5>
+                <p className="text-muted">Try adjusting your search or filter criteria.</p>
+                <button 
+                  className="btn text-white rounded-pill px-4" 
+                  style={{ backgroundColor: '#2fa5b6' }}
+                  onClick={() => { setSearchTerm(''); setSelectedCategory('All'); }}
+                >
+                  Clear Filters
+                </button>
               </div>
             ) : (
-              filteredProducts.map((product) => (
-                <div className="col-md-6 col-lg-4" key={product.id}>
-                  <div 
-                    className="rounded-4 h-100" 
-                    style={{ 
-                      border: '1px solid #e2e8f0',
-                      backgroundColor: '#ffffff',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => { 
-                      e.currentTarget.style.borderColor = '#2fa5b6'; 
-                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(47, 165, 182, 0.12)'; 
-                      e.currentTarget.style.transform = 'translateY(-4px)'; 
-                    }}
-                    onMouseLeave={(e) => { 
-                      e.currentTarget.style.borderColor = '#e2e8f0'; 
-                      e.currentTarget.style.boxShadow = 'none'; 
-                      e.currentTarget.style.transform = 'translateY(0)'; 
-                    }}
-                  >
-                    <div style={{ height: '250px', overflow: 'hidden' }}>
-                      <img 
-                        src={`http://localhost:5000${product.image}`}
-                        alt={product.name}
-                        className="w-100 h-100"
-                        style={{ objectFit: 'cover' }}
-                      />
-                    </div>
-                    <div className="p-4">
-                      <span className="badge rounded-pill mb-2" style={{ 
-                        backgroundColor: '#f0f9fa', 
-                        color: '#2fa5b6',
-                        border: '1px solid #d1e8eb'
-                      }}>
-                        {product.category}
-                      </span>
-                      <h5 className="fw-bold mb-2" style={{ color: '#0b2540' }}>{product.name}</h5>
-                      <p className="text-muted small mb-3" style={{ fontSize: '0.9rem' }}>
-                        {product.description.substring(0, 100)}...
-                      </p>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <h4 className="fw-bold mb-0" style={{ color: '#2fa5b6' }}>
-                          KES {parseFloat(product.price).toLocaleString()}
-                        </h4>
-                        <button
-                          className="btn rounded-pill px-3"
-                          onClick={() => addToCart(product)}
-                          style={{ backgroundColor: '#2fa5b6', color: '#fff', border: 'none' }}
-                        >
-                          <FaShoppingCart className="me-2" /> Add to Cart
-                        </button>
+              filteredProducts.map((product) => {
+                const inCart = isInCart(product.id);
+                return (
+                  <div className="col-md-6 col-lg-4" key={product.id}>
+                    <div 
+                      className="rounded-4 h-100 d-flex flex-column" 
+                      style={{ 
+                        border: '1px solid #e2e8f0',
+                        backgroundColor: '#ffffff',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => { 
+                        e.currentTarget.style.borderColor = '#2fa5b6'; 
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(47, 165, 182, 0.12)'; 
+                        e.currentTarget.style.transform = 'translateY(-4px)'; 
+                      }}
+                      onMouseLeave={(e) => { 
+                        e.currentTarget.style.borderColor = '#e2e8f0'; 
+                        e.currentTarget.style.boxShadow = 'none'; 
+                        e.currentTarget.style.transform = 'translateY(0)'; 
+                      }}
+                    >
+                      <div style={{ height: '250px', overflow: 'hidden', position: 'relative' }}>
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-100 h-100"
+                          style={{ objectFit: 'cover' }}
+                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=400'; }}
+                        />
+                        {inCart && (
+                          <div className="position-absolute top-0 end-0 m-2">
+                            <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: '#2fa5b6', color: '#fff' }}>
+                              <FaCheck className="me-1" /> In Cart
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4 d-flex flex-column flex-grow-1">
+                        <span className="badge rounded-pill mb-2 align-self-start" style={{ 
+                          backgroundColor: '#f0f9fa', 
+                          color: '#2fa5b6',
+                          border: '1px solid #d1e8eb'
+                        }}>
+                          {product.category}
+                        </span>
+                        <h5 className="fw-bold mb-2" style={{ color: '#0b2540' }}>{product.name}</h5>
+                        <p className="text-muted small mb-3 flex-grow-1" style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+                          {product.description.length > 120 
+                            ? `${product.description.substring(0, 120)}...` 
+                            : product.description}
+                        </p>
+                        <div className="d-flex justify-content-between align-items-center mt-auto pt-3" style={{ borderTop: '1px solid #f0f4f8' }}>
+                          <h4 className="fw-bold mb-0" style={{ color: '#2fa5b6', fontSize: '1.3rem' }}>
+                            KES {parseFloat(product.price).toLocaleString()}
+                          </h4>
+                          <button
+                            className="btn rounded-pill px-3 d-flex align-items-center gap-2"
+                            onClick={() => handleAddToCart(product)}
+                            style={{ 
+                              backgroundColor: inCart ? '#0b2540' : '#2fa5b6', 
+                              color: '#fff', 
+                              border: 'none',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <FaPlus size={12} />
+                            {inCart ? 'Add More' : 'Add to Cart'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
-          {/* Cart Summary */}
+          {/* Cart Summary Bar */}
           {cart.length > 0 && (
-            <div className="mt-5 p-4 rounded-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+            <div className="mt-5 p-4 rounded-4 sticky-bottom" style={{ 
+              backgroundColor: '#0b2540', 
+              border: '1px solid #0b2540',
+              position: 'sticky',
+              bottom: '20px',
+              boxShadow: '0 -4px 20px rgba(11, 37, 64, 0.15)'
+            }}>
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
-                  <h5 className="fw-bold mb-1" style={{ color: '#0b2540' }}>
-                    Shopping Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)
+                  <h5 className="fw-bold mb-1" style={{ color: '#ffffff' }}>
+                    <FaShoppingCart className="me-2" style={{ color: '#2fa5b6' }} />
+                    Shopping Cart ({getCartCount()} {getCartCount() === 1 ? 'item' : 'items'})
                   </h5>
-                  <p className="mb-0 text-muted">
-                    Total: KES {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}
+                  <p className="mb-0" style={{ color: '#cbd5e0' }}>
+                    Total: <strong style={{ color: '#2fa5b6', fontSize: '1.2rem' }}>KES {getCartTotal().toLocaleString()}</strong>
                   </p>
                 </div>
-                <Link to="/checkout" className="btn text-white rounded-pill px-4" style={{ backgroundColor: '#2fa5b6', border: 'none' }}>
-                  Proceed to Checkout
-                </Link>
+                <div className="d-flex gap-2">
+                  <Link to="/cart" className="btn btn-outline-light rounded-pill px-4">
+                    View Cart
+                  </Link>
+                  <Link to="/checkout" className="btn rounded-pill px-4" style={{ backgroundColor: '#2fa5b6', color: '#fff', border: 'none' }}>
+                    Proceed to Checkout
+                  </Link>
+                </div>
               </div>
             </div>
           )}

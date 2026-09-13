@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '../../context/AdminContext';
-import { 
-  FaSignOutAlt, FaBox, FaConciergeBell, FaImages, FaTrash, FaPlus, 
+import { toastSuccess, toastError } from '../../utils/toast';
+import {
+  FaSignOutAlt, FaBox, FaConciergeBell, FaImages, FaTrash, FaPlus,
   FaMicroscope, FaProjectDiagram, FaEye, FaEdit, FaUpload, FaSpinner,
   FaShoppingCart, FaEnvelope, FaChartLine, FaMoneyBillWave, FaClock,
-  FaCheckCircle, FaTimesCircle, FaTruck, FaPhone, FaUser, FaCalendar
+  FaCheckCircle, FaTimesCircle, FaTruck, FaPhone, FaUser, FaCalendar,
+  FaBuilding
 } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const { token, logout } = useAdmin();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
-  
+
   // Data States
   const [stats, setStats] = useState({});
   const [products, setProducts] = useState([]);
@@ -22,7 +24,9 @@ const AdminDashboard = () => {
   const [processSteps, setProcessSteps] = useState([]);
   const [orders, setOrders] = useState([]);
   const [contacts, setContacts] = useState([]);
-  
+  const [companyInfo, setCompanyInfo] = useState({});
+  const [infoFormData, setInfoFormData] = useState({});
+
   // Modal States
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -38,12 +42,13 @@ const AdminDashboard = () => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
 
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
   const getEndpoint = (type) => type === 'process' ? 'process-steps' : `${type}s`;
 
-  useEffect(() => { 
-    fetchAllData(); 
+  useEffect(() => {
+    fetchAllData();
   }, []);
 
   const fetchAllData = async () => {
@@ -61,14 +66,15 @@ const AdminDashboard = () => {
   };
 
   const fetchData = async () => {
-    const [pRes, sRes, gRes, tRes, psRes, oRes, cRes] = await Promise.all([
+    const [pRes, sRes, gRes, tRes, psRes, oRes, cRes, infoRes] = await Promise.all([
       fetch('http://localhost:5000/api/products'),
       fetch('http://localhost:5000/api/services'),
       fetch('http://localhost:5000/api/gallery'),
       fetch('http://localhost:5000/api/technologies'),
       fetch('http://localhost:5000/api/process-steps'),
       fetch('http://localhost:5000/api/admin/orders', { headers }),
-      fetch('http://localhost:5000/api/admin/contacts', { headers })
+      fetch('http://localhost:5000/api/admin/contacts', { headers }),
+      fetch('http://localhost:5000/api/company-info')
     ]);
     setProducts(await pRes.json());
     setServices(await sRes.json());
@@ -77,6 +83,11 @@ const AdminDashboard = () => {
     setProcessSteps(await psRes.json());
     setOrders(await oRes.json());
     setContacts(await cRes.json());
+    
+    // FIXED: Parse response once, then use the data twice
+    const companyData = await infoRes.json();
+    setCompanyInfo(companyData);
+    setInfoFormData(companyData);
   };
 
   // --- ORDER MANAGEMENT ---
@@ -109,7 +120,7 @@ const AdminDashboard = () => {
       fetchData();
       fetchStats();
     } catch (err) {
-      alert('Error updating status');
+      toastError('Error updating status');
     }
   };
 
@@ -225,6 +236,26 @@ const AdminDashboard = () => {
     fetchData();
   };
 
+  const handleInfoSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:5000/api/company-info', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(infoFormData)
+      });
+      if (res.ok) {
+        setCompanyInfo(infoFormData);
+        setIsEditingInfo(false);
+        toastSuccess('Company information updated successfully!');
+      } else {
+        toastError('Failed to update company information.');
+      }
+    } catch (err) {
+      toastError('Failed to update company information.');
+    }
+  };
+
   const handleLogout = () => { logout(); navigate('/'); };
 
   // --- HELPERS ---
@@ -289,6 +320,7 @@ const AdminDashboard = () => {
     { id: 'dashboard', label: 'Dashboard', icon: <FaChartLine /> },
     { id: 'orders', label: 'Orders', icon: <FaShoppingCart /> },
     { id: 'inquiries', label: 'Inquiries', icon: <FaEnvelope /> },
+    { id: 'company', label: 'Company Info', icon: <FaBuilding /> },
     { id: 'services', label: 'Services', icon: <FaConciergeBell /> },
     { id: 'technologies', label: 'Technologies', icon: <FaMicroscope /> },
     { id: 'process', label: 'Process Steps', icon: <FaProjectDiagram /> },
@@ -371,7 +403,7 @@ const AdminDashboard = () => {
 
         {/* Content Area */}
         <div className="p-4 rounded-4" style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
-          
+
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
             <>
@@ -502,6 +534,132 @@ const AdminDashboard = () => {
             </>
           )}
 
+          {/* COMPANY INFO TAB */}
+          {activeTab === 'company' && (
+            <div className="p-4 rounded-4" style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h5 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Manage Company Information</h5>
+                <button
+                  onClick={() => setIsEditingInfo(!isEditingInfo)}
+                  className="btn btn-sm rounded-pill px-3"
+                  style={{ backgroundColor: isEditingInfo ? '#6c757d' : '#2fa5b6', color: '#fff' }}
+                >
+                  {isEditingInfo ? 'Cancel' : 'Edit Information'}
+                </button>
+              </div>
+
+              <form onSubmit={handleInfoSubmit}>
+                <div className="row g-4">
+                  <div className="col-12">
+                    <label className="form-label small fw-semibold">About Us</label>
+                    <textarea
+                      className="form-control"
+                      rows="4"
+                      name="aboutUs"
+                      value={infoFormData.aboutUs || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, aboutUs: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label small fw-semibold">Mission</label>
+                    <textarea
+                      className="form-control"
+                      rows="5"
+                      name="mission"
+                      value={infoFormData.mission || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, mission: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label small fw-semibold">Vision</label>
+                    <textarea
+                      className="form-control"
+                      rows="5"
+                      name="vision"
+                      value={infoFormData.vision || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, vision: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label small fw-semibold">Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      name="email"
+                      value={infoFormData.email || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, email: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label small fw-semibold">Website</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="website"
+                      value={infoFormData.website || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, website: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label small fw-semibold">Phone 1</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="phone1"
+                      value={infoFormData.phone1 || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, phone1: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label small fw-semibold">Phone 2</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="phone2"
+                      value={infoFormData.phone2 || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, phone2: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label small fw-semibold">Address</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="address"
+                      value={infoFormData.address || ''}
+                      onChange={(e) => setInfoFormData({ ...infoFormData, address: e.target.value })}
+                      disabled={!isEditingInfo}
+                      style={{ backgroundColor: isEditingInfo ? '#fff' : '#f8fafc' }}
+                    />
+                  </div>
+
+                  {isEditingInfo && (
+                    <div className="col-12 text-end">
+                      <button type="submit" className="btn text-white rounded-pill px-4" style={{ backgroundColor: '#2fa5b6' }}>
+                        Save Changes
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
+
           {/* SERVICES TAB */}
           {activeTab === 'services' && (
             <>
@@ -511,7 +669,7 @@ const AdminDashboard = () => {
               </div>
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
-                  <thead><tr><th>ID</th><th>Title</th><th>Short Description</th><th>Icon</th><th style={{width: '150px'}}>Actions</th></tr></thead>
+                  <thead><tr><th>ID</th><th>Title</th><th>Short Description</th><th>Icon</th><th style={{ width: '150px' }}>Actions</th></tr></thead>
                   <tbody>{services.map(s => (<tr key={s.id}><td>{s.id}</td><td className="fw-semibold">{s.title}</td><td className="text-muted small">{s.shortDesc}</td><td><span className="badge bg-light text-dark border">{s.icon}</span></td><td><ActionButtons item={s} type="service" /></td></tr>))}</tbody>
                 </table>
               </div>
@@ -527,7 +685,7 @@ const AdminDashboard = () => {
               </div>
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
-                  <thead><tr><th>ID</th><th>Name</th><th>Icon</th><th style={{width: '150px'}}>Actions</th></tr></thead>
+                  <thead><tr><th>ID</th><th>Name</th><th>Icon</th><th style={{ width: '150px' }}>Actions</th></tr></thead>
                   <tbody>{technologies.map(t => (<tr key={t.id}><td>{t.id}</td><td className="fw-semibold">{t.name}</td><td><span className="badge bg-light text-dark border">{t.icon}</span></td><td><ActionButtons item={t} type="technology" /></td></tr>))}</tbody>
                 </table>
               </div>
@@ -543,8 +701,8 @@ const AdminDashboard = () => {
               </div>
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
-                  <thead><tr><th>Step #</th><th>Title</th><th>Description</th><th style={{width: '150px'}}>Actions</th></tr></thead>
-                  <tbody>{processSteps.map(p => (<tr key={p.id}><td><span className="badge rounded-pill" style={{backgroundColor: '#2fa5b6', color: '#fff'}}>{p.stepNumber}</span></td><td className="fw-semibold">{p.title}</td><td className="text-muted small">{p.description}</td><td><ActionButtons item={p} type="process" /></td></tr>))}</tbody>
+                  <thead><tr><th>Step #</th><th>Title</th><th>Description</th><th style={{ width: '150px' }}>Actions</th></tr></thead>
+                  <tbody>{processSteps.map(p => (<tr key={p.id}><td><span className="badge rounded-pill" style={{ backgroundColor: '#2fa5b6', color: '#fff' }}>{p.stepNumber}</span></td><td className="fw-semibold">{p.title}</td><td className="text-muted small">{p.description}</td><td><ActionButtons item={p} type="process" /></td></tr>))}</tbody>
                 </table>
               </div>
             </>
@@ -559,7 +717,7 @@ const AdminDashboard = () => {
               </div>
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
-                  <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th style={{width: '150px'}}>Actions</th></tr></thead>
+                  <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th style={{ width: '150px' }}>Actions</th></tr></thead>
                   <tbody>{products.map(p => (<tr key={p.id}><td><img src={`http://localhost:5000${p.image}`} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /></td><td className="fw-semibold">{p.name}</td><td><span className="badge bg-light text-dark border">{p.category}</span></td><td>KES {parseFloat(p.price).toLocaleString()}</td><td>{p.stock}</td><td><ActionButtons item={p} type="product" /></td></tr>))}</tbody>
                 </table>
               </div>
@@ -575,7 +733,7 @@ const AdminDashboard = () => {
               </div>
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
-                  <thead><tr><th>Image</th><th>Title</th><th>Category</th><th style={{width: '150px'}}>Actions</th></tr></thead>
+                  <thead><tr><th>Image</th><th>Title</th><th>Category</th><th style={{ width: '150px' }}>Actions</th></tr></thead>
                   <tbody>{gallery.map(g => (<tr key={g.id}><td><img src={`http://localhost:5000${g.image}`} alt="" style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /></td><td className="fw-semibold">{g.title}</td><td><span className="badge bg-light text-dark border">{g.category}</span></td><td><ActionButtons item={g} type="gallery" /></td></tr>))}</tbody>
                 </table>
               </div>
@@ -722,12 +880,12 @@ const AdminDashboard = () => {
       {/* ADD PRODUCT MODAL */}
       <ModalWrapper title="Add New Product" show={showAddModal && modalType === 'product'} onClose={() => setShowAddModal(false)} onSubmit={handleAddSubmit}>
         <div className="row g-3">
-          <div className="col-12"><label className="form-label small fw-semibold">Name</label><input type="text" className="form-control" required value={newItem.name || ''} onChange={e => setNewItem({...newItem, name: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Name</label><input type="text" className="form-control" required value={newItem.name || ''} onChange={e => setNewItem({ ...newItem, name: e.target.value })} /></div>
           <ImageUploadField value={newItem.image} formType="new" />
-          <div className="col-6"><label className="form-label small fw-semibold">Price</label><input type="number" className="form-control" required value={newItem.price || ''} onChange={e => setNewItem({...newItem, price: e.target.value})} /></div>
-          <div className="col-6"><label className="form-label small fw-semibold">Stock</label><input type="number" className="form-control" required value={newItem.stock || ''} onChange={e => setNewItem({...newItem, stock: e.target.value})} /></div>
-          <div className="col-6"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={newItem.category || ''} onChange={e => setNewItem({...newItem, category: e.target.value})} /></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={newItem.description || ''} onChange={e => setNewItem({...newItem, description: e.target.value})}></textarea></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Price</label><input type="number" className="form-control" required value={newItem.price || ''} onChange={e => setNewItem({ ...newItem, price: e.target.value })} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Stock</label><input type="number" className="form-control" required value={newItem.stock || ''} onChange={e => setNewItem({ ...newItem, stock: e.target.value })} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={newItem.category || ''} onChange={e => setNewItem({ ...newItem, category: e.target.value })} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={newItem.description || ''} onChange={e => setNewItem({ ...newItem, description: e.target.value })}></textarea></div>
         </div>
       </ModalWrapper>
 
@@ -735,12 +893,12 @@ const AdminDashboard = () => {
       <ModalWrapper title="Edit Product" show={showEditModal && modalType === 'product'} onClose={() => setShowEditModal(false)} onSubmit={handleEditSubmit}>
         {editItem && (
           <div className="row g-3">
-            <div className="col-12"><label className="form-label small fw-semibold">Name</label><input type="text" className="form-control" required value={editItem.name || ''} onChange={e => setEditItem({...editItem, name: e.target.value})} /></div>
+            <div className="col-12"><label className="form-label small fw-semibold">Name</label><input type="text" className="form-control" required value={editItem.name || ''} onChange={e => setEditItem({ ...editItem, name: e.target.value })} /></div>
             <ImageUploadField value={editItem.image} formType="edit" />
-            <div className="col-6"><label className="form-label small fw-semibold">Price</label><input type="number" className="form-control" required value={editItem.price || ''} onChange={e => setEditItem({...editItem, price: e.target.value})} /></div>
-            <div className="col-6"><label className="form-label small fw-semibold">Stock</label><input type="number" className="form-control" required value={editItem.stock || ''} onChange={e => setEditItem({...editItem, stock: e.target.value})} /></div>
-            <div className="col-6"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={editItem.category || ''} onChange={e => setEditItem({...editItem, category: e.target.value})} /></div>
-            <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={editItem.description || ''} onChange={e => setEditItem({...editItem, description: e.target.value})}></textarea></div>
+            <div className="col-6"><label className="form-label small fw-semibold">Price</label><input type="number" className="form-control" required value={editItem.price || ''} onChange={e => setEditItem({ ...editItem, price: e.target.value })} /></div>
+            <div className="col-6"><label className="form-label small fw-semibold">Stock</label><input type="number" className="form-control" required value={editItem.stock || ''} onChange={e => setEditItem({ ...editItem, stock: e.target.value })} /></div>
+            <div className="col-6"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={editItem.category || ''} onChange={e => setEditItem({ ...editItem, category: e.target.value })} /></div>
+            <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={editItem.description || ''} onChange={e => setEditItem({ ...editItem, description: e.target.value })}></textarea></div>
           </div>
         )}
       </ModalWrapper>
@@ -748,22 +906,22 @@ const AdminDashboard = () => {
       {/* ADD/EDIT SERVICE MODAL */}
       <ModalWrapper title={showAddModal && modalType === 'service' ? "Add New Service" : "Edit Service"} show={(showAddModal || showEditModal) && modalType === 'service'} onClose={() => { setShowAddModal(false); setShowEditModal(false); }} onSubmit={showAddModal && modalType === 'service' ? handleAddSubmit : handleEditSubmit}>
         <div className="row g-3">
-          <div className="col-12"><label className="form-label small fw-semibold">Title</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.title || ''} onChange={e => showAddModal ? setNewItem({...newItem, title: e.target.value}) : setEditItem({...editItem, title: e.target.value})} /></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Short Description</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.shortDesc || ''} onChange={e => showAddModal ? setNewItem({...newItem, shortDesc: e.target.value}) : setEditItem({...editItem, shortDesc: e.target.value})} /></div>
-          <div className="col-6"><label className="form-label small fw-semibold">Icon</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.icon || ''} onChange={e => showAddModal ? setNewItem({...newItem, icon: e.target.value}) : setEditItem({...editItem, icon: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Title</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.title || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, title: e.target.value }) : setEditItem({ ...editItem, title: e.target.value })} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Short Description</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.shortDesc || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, shortDesc: e.target.value }) : setEditItem({ ...editItem, shortDesc: e.target.value })} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Icon</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.icon || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, icon: e.target.value }) : setEditItem({ ...editItem, icon: e.target.value })} /></div>
           <ImageUploadField value={(showAddModal ? newItem : editItem)?.image} formType={showAddModal ? "new" : "edit"} />
-          <div className="col-12"><label className="form-label small fw-semibold">Full Description</label><textarea className="form-control" rows="3" required value={(showAddModal ? newItem : editItem)?.description || ''} onChange={e => showAddModal ? setNewItem({...newItem, description: e.target.value}) : setEditItem({...editItem, description: e.target.value})}></textarea></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Features (One per line)</label><textarea className="form-control" rows="3" value={(showAddModal ? newItem : editItem)?.featuresText || ''} onChange={e => showAddModal ? setNewItem({...newItem, featuresText: e.target.value}) : setEditItem({...editItem, featuresText: e.target.value})}></textarea></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Applications (Name:Icon)</label><textarea className="form-control" rows="3" value={(showAddModal ? newItem : editItem)?.applicationsText || ''} onChange={e => showAddModal ? setNewItem({...newItem, applicationsText: e.target.value}) : setEditItem({...editItem, applicationsText: e.target.value})}></textarea></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Benefits</label><textarea className="form-control" rows="2" value={(showAddModal ? newItem : editItem)?.benefits || ''} onChange={e => showAddModal ? setNewItem({...newItem, benefits: e.target.value}) : setEditItem({...editItem, benefits: e.target.value})}></textarea></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Full Description</label><textarea className="form-control" rows="3" required value={(showAddModal ? newItem : editItem)?.description || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, description: e.target.value }) : setEditItem({ ...editItem, description: e.target.value })}></textarea></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Features (One per line)</label><textarea className="form-control" rows="3" value={(showAddModal ? newItem : editItem)?.featuresText || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, featuresText: e.target.value }) : setEditItem({ ...editItem, featuresText: e.target.value })}></textarea></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Applications (Name:Icon)</label><textarea className="form-control" rows="3" value={(showAddModal ? newItem : editItem)?.applicationsText || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, applicationsText: e.target.value }) : setEditItem({ ...editItem, applicationsText: e.target.value })}></textarea></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Benefits</label><textarea className="form-control" rows="2" value={(showAddModal ? newItem : editItem)?.benefits || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, benefits: e.target.value }) : setEditItem({ ...editItem, benefits: e.target.value })}></textarea></div>
         </div>
       </ModalWrapper>
 
       {/* ADD/EDIT GALLERY MODAL */}
       <ModalWrapper title={showAddModal && modalType === 'gallery' ? "Add Gallery Image" : "Edit Gallery Image"} show={(showAddModal || showEditModal) && modalType === 'gallery'} onClose={() => { setShowAddModal(false); setShowEditModal(false); }} onSubmit={showAddModal && modalType === 'gallery' ? handleAddSubmit : handleEditSubmit}>
         <div className="row g-3">
-          <div className="col-12"><label className="form-label small fw-semibold">Title</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.title || ''} onChange={e => showAddModal ? setNewItem({...newItem, title: e.target.value}) : setEditItem({...editItem, title: e.target.value})} /></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.category || ''} onChange={e => showAddModal ? setNewItem({...newItem, category: e.target.value}) : setEditItem({...editItem, category: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Title</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.title || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, title: e.target.value }) : setEditItem({ ...editItem, title: e.target.value })} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Category</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.category || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, category: e.target.value }) : setEditItem({ ...editItem, category: e.target.value })} /></div>
           <ImageUploadField value={(showAddModal ? newItem : editItem)?.image} formType={showAddModal ? "new" : "edit"} />
         </div>
       </ModalWrapper>
@@ -771,19 +929,19 @@ const AdminDashboard = () => {
       {/* ADD/EDIT TECHNOLOGY MODAL */}
       <ModalWrapper title={showAddModal && modalType === 'technology' ? "Add New Technology" : "Edit Technology"} show={(showAddModal || showEditModal) && modalType === 'technology'} onClose={() => { setShowAddModal(false); setShowEditModal(false); }} onSubmit={showAddModal && modalType === 'technology' ? handleAddSubmit : handleEditSubmit}>
         <div className="row g-3">
-          <div className="col-12"><label className="form-label small fw-semibold">Name</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.name || ''} onChange={e => showAddModal ? setNewItem({...newItem, name: e.target.value}) : setEditItem({...editItem, name: e.target.value})} /></div>
-          <div className="col-6"><label className="form-label small fw-semibold">Icon</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.icon || ''} onChange={e => showAddModal ? setNewItem({...newItem, icon: e.target.value}) : setEditItem({...editItem, icon: e.target.value})} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Name</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.name || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, name: e.target.value }) : setEditItem({ ...editItem, name: e.target.value })} /></div>
+          <div className="col-6"><label className="form-label small fw-semibold">Icon</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.icon || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, icon: e.target.value }) : setEditItem({ ...editItem, icon: e.target.value })} /></div>
           <ImageUploadField value={(showAddModal ? newItem : editItem)?.image} formType={showAddModal ? "new" : "edit"} />
-          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={(showAddModal ? newItem : editItem)?.description || ''} onChange={e => showAddModal ? setNewItem({...newItem, description: e.target.value}) : setEditItem({...editItem, description: e.target.value})}></textarea></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={(showAddModal ? newItem : editItem)?.description || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, description: e.target.value }) : setEditItem({ ...editItem, description: e.target.value })}></textarea></div>
         </div>
       </ModalWrapper>
 
       {/* ADD/EDIT PROCESS STEP MODAL */}
       <ModalWrapper title={showAddModal && modalType === 'process' ? "Add Process Step" : "Edit Process Step"} show={(showAddModal || showEditModal) && modalType === 'process'} onClose={() => { setShowAddModal(false); setShowEditModal(false); }} onSubmit={showAddModal && modalType === 'process' ? handleAddSubmit : handleEditSubmit}>
         <div className="row g-3">
-          <div className="col-4"><label className="form-label small fw-semibold">Step Number</label><input type="number" className="form-control" required value={(showAddModal ? newItem : editItem)?.stepNumber || ''} onChange={e => showAddModal ? setNewItem({...newItem, stepNumber: e.target.value}) : setEditItem({...editItem, stepNumber: e.target.value})} /></div>
-          <div className="col-8"><label className="form-label small fw-semibold">Title</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.title || ''} onChange={e => showAddModal ? setNewItem({...newItem, title: e.target.value}) : setEditItem({...editItem, title: e.target.value})} /></div>
-          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={(showAddModal ? newItem : editItem)?.description || ''} onChange={e => showAddModal ? setNewItem({...newItem, description: e.target.value}) : setEditItem({...editItem, description: e.target.value})}></textarea></div>
+          <div className="col-4"><label className="form-label small fw-semibold">Step Number</label><input type="number" className="form-control" required value={(showAddModal ? newItem : editItem)?.stepNumber || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, stepNumber: e.target.value }) : setEditItem({ ...editItem, stepNumber: e.target.value })} /></div>
+          <div className="col-8"><label className="form-label small fw-semibold">Title</label><input type="text" className="form-control" required value={(showAddModal ? newItem : editItem)?.title || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, title: e.target.value }) : setEditItem({ ...editItem, title: e.target.value })} /></div>
+          <div className="col-12"><label className="form-label small fw-semibold">Description</label><textarea className="form-control" rows="3" required value={(showAddModal ? newItem : editItem)?.description || ''} onChange={e => showAddModal ? setNewItem({ ...newItem, description: e.target.value }) : setEditItem({ ...editItem, description: e.target.value })}></textarea></div>
         </div>
       </ModalWrapper>
 

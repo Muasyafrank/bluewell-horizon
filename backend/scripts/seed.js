@@ -6,6 +6,7 @@ const Service = require('../models/Service');
 const Gallery = require('../models/Gallery');
 const Technology = require('../models/Technology');
 const ProcessStep = require('../models/ProcessStep');
+const CompanyInfo = require('../models/CompanyInfo');
 
 const seed = async () => {
   try {
@@ -211,7 +212,7 @@ const seed = async () => {
     ]);
     console.log('✅ Process Steps seeded.');
 
-    // 5. Products (Based on Services)
+  
     // 5. Products (Refined to match Company Profile PDF exactly)
     await Product.bulkCreate([
       {
@@ -219,7 +220,7 @@ const seed = async () => {
         description: 'Advanced EDI systems ensure high-purity water through automated monitoring, efficient filtration, and reliable performance. Ideal for laboratories, pharmaceutical industries, medical facilities, and precision manufacturing.',
         price: 350000.00,
         category: 'UltraPure Water',
-        image: '/images/product-ultrapure.jpg',
+        image: '/images/gallery-3.png',
         stock: 3
       },
       {
@@ -227,7 +228,7 @@ const seed = async () => {
         description: 'Designed to remove hardness minerals, prevent scaling, protect equipment, and improve water efficiency. Features automatic regeneration, PLC-controlled systems, and durable stainless steel/FRP tanks.',
         price: 85000.00,
         category: 'Water Softening',
-        image: '/images/product-softener.jpg',
+        image: '/images/gallery-3.png',
         stock: 10
       },
       {
@@ -235,7 +236,7 @@ const seed = async () => {
         description: 'Removes sediment, turbidity, chlorine, and suspended impurities from raw water sources to improve water quality and protect purification equipment. Ideal for borehole water treatment and industrial pretreatment.',
         price: 65000.00,
         category: 'Filtration',
-        image: '/images/product-multimedia.jpg',
+        image: '/images/gallery-3.png',
         stock: 15
       },
       {
@@ -243,7 +244,7 @@ const seed = async () => {
         description: 'Comprehensive purification utilizing advanced RO technology to effectively eliminate bacteria, viruses, chemicals, and heavy metals, ensuring safe and potable water for commercial applications.',
         price: 120000.00,
         category: 'Water Purification',
-        image: '/images/product-ro.jpg',
+        image: '/images/gallery-3.png',
         stock: 8
       },
       {
@@ -251,11 +252,23 @@ const seed = async () => {
         description: 'Effective water disinfection using UV technology to eliminate harmful microorganisms and pathogens, ensuring safe and hygienic water for residential estates, institutions, and commercial facilities.',
         price: 35000.00,
         category: 'Water Disinfection',
-        image: '/images/product-uv.jpg',
+        image: '/images/gallery-3.png',
         stock: 20
       }
     ]);
     console.log('✅ Products seeded (aligned with Company Profile).');
+
+    await CompanyInfo.create({
+      aboutUs: 'Bluewell Horizon Limited is a trusted provider of innovative and reliable water treatment technologies. We specialize in designing, supplying, installing, and maintaining high-quality water systems for residential, commercial, institutional, and industrial clients. With a commitment to excellence, sustainability, and customer satisfaction, we deliver customized water solutions that meet the highest standards of safety, efficiency, and environmental responsibility.',
+      mission: 'To design, supply, and maintain reliable, innovative water treatment systems for residential, commercial, and industrial clients — ensuring access to safe, clean water at every level. We are committed to delivering affordable, high-quality solutions tailored to the unique needs of each client, powered by modern technology and professional expertise. Upholding integrity, transparency, and timely service, we strive for continuous improvement and sustainable water use, building long-term partnerships grounded in trust and excellence.',
+      vision: 'To become the leading and most trusted provider of water treatment solutions in the region, recognized as a reliable partner in delivering advanced, sustainable, and innovative water systems. We envision a future where every community has access to safe and clean water, driven by our commitment to excellence, integrity, and environmental responsibility. Through the adoption of emerging technologies and continuous improvement in service delivery, we aspire to set industry standards while positively impacting lives and contributing to a healthier, more sustainable world for generations to come.',
+      email: 'bluewellsynergy@gmail.com',
+      phone1: '0721-633-223',
+      phone2: '0731-836-349',
+      address: 'Harambee Estate, Nairobi, Kenya',
+      website: 'www.bluewellhorizonlimited.com'
+    });
+    console.log('✅ Company Info seeded.');
 
     // 6. Gallery Items (From Company Profile - Pages 13-19)
     await Gallery.bulkCreate([
@@ -307,6 +320,8 @@ const seed = async () => {
     console.log('   Location: Harambee Estate');
     console.log('   Phone: 0721-633-223 / 0731-836-349');
     console.log('   Email: bluewellsynergy@gmail.com\n');
+
+  
 
     process.exit(0);
   } catch (error) {
