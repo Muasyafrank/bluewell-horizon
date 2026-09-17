@@ -83,7 +83,7 @@ const AdminDashboard = () => {
     setProcessSteps(await psRes.json());
     setOrders(await oRes.json());
     setContacts(await cRes.json());
-    
+
     // FIXED: Parse response once, then use the data twice
     const companyData = await infoRes.json();
     setCompanyInfo(companyData);
@@ -111,16 +111,25 @@ const AdminDashboard = () => {
   const handleUpdateStatus = async (e) => {
     e.preventDefault();
     try {
-      await fetch(`http://localhost:5000/api/admin/orders/${selectedOrder.order.id}/status`, {
+      const res = await fetch(`http://localhost:5000/api/admin/orders/${selectedOrder.order.id}/status`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({ status: newStatus })
       });
-      setShowStatusModal(false);
-      fetchData();
-      fetchStats();
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toastSuccess(data.message || 'Order status updated successfully!');
+        setShowStatusModal(false);
+        fetchData();
+        fetchStats();
+      } else {
+        toastError(data.message || 'Failed to update status');
+      }
     } catch (err) {
-      toastError('Error updating status');
+      console.error('Status update error:', err);
+      toastError('Network error while updating status');
     }
   };
 
