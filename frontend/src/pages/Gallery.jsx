@@ -1,53 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import SEO from '../components/SEO';
-const Gallery = () => {
-  const [gallery, setGallery] = useState([]);
+import React, { useMemo, useState } from 'react';
+import { FaImages } from 'react-icons/fa';
+import { catalogApi } from '../api';
+import { useApiResource } from '../hooks';
+import { SEO, Image } from '../components/common';
+import { PageBanner } from '../components/layout';
+import { AsyncSection, Card, EmptyState } from '../components/ui';
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/gallery')
-      .then(res => res.json())
-      .then(data => setGallery(data))
-      .catch(err => console.error(err));
-  }, []);
+const ALL = 'All projects';
+
+export default function Gallery() {
+  const [category, setCategory] = useState(ALL);
+  const { data, loading, error, reload } = useApiResource(
+    (options) => catalogApi.listGallery(options),
+    { initialData: [] },
+  );
+
+  const items = useMemo(() => data || [], [data]);
+
+  const categories = useMemo(
+    () => [ALL, ...Array.from(new Set(items.map((item) => item.category).filter(Boolean)))],
+    [items],
+  );
+
+  const visible = useMemo(
+    () => (category === ALL ? items : items.filter((item) => item.category === category)),
+    [items, category],
+  );
 
   return (
     <>
-      <SEO 
-        title="Gallery - Our Water Treatment Projects"
-        description="View our portfolio of water treatment installations across Kenya. Industrial plants, commercial systems, residential solutions, and more."
-        keywords="water treatment projects Kenya, water purification installations, Bluewell Horizon gallery"
-        url="https://www.bluewellhorizonlimited.com/gallery"
+      <SEO
+        title="Gallery"
+        description="Water treatment installations across Kenya: industrial plants, commercial systems and residential solutions."
+        path="/gallery"
       />
-      {/* Header */}
-      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(147, 149, 150, 0.25), rgba(14, 17, 28, 0.9)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
-        <div className="container py-5">
-          <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffff' }}>Our Gallery</h1>
-          <p className="lead mb-0" style={{ color: '#cbd5e0' }}>Projects across residential estates, commercial facilities, and industrial plants.</p>
-        </div>
-      </section>
 
-      {/* Gallery Grid */}
-      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
-        <div className="container py-5">
-          <div className="row g-4">
-            {gallery.map((item) => (
-              <div className="col-md-4 col-lg-3" key={item.id}>
-                <div className="rounded-4 overflow-hidden" style={{ border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <div style={{ overflow: 'hidden', height: '220px' }}>
-                    <img src={item.image} alt={item.title} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                  </div>
-                  <div className="p-3">
-                    <h6 className="fw-bold mb-1" style={{ color: '#0b2540', fontSize: '0.95rem' }}>{item.title}</h6>
-                    <p className="mb-0 small" style={{ color: '#718096' }}>{item.category}</p>
-                  </div>
+      <PageBanner
+        eyebrow="Our work"
+        title="Installations across Kenya"
+        lead="Residential estates, commercial facilities and industrial plants we have delivered and continue to service."
+      />
+
+      <section className="bw-section">
+        <div className="container">
+          <AsyncSection
+            loading={loading}
+            error={error}
+            onRetry={reload}
+            loadingText="Loading projects"
+            isEmpty={items.length === 0}
+            empty={
+              <EmptyState
+                icon={<FaImages />}
+                title="No projects published yet"
+                description="Completed installations are added here as they are photographed."
+              />
+            }
+          >
+            {categories.length > 2 ? (
+              <ul className="bw-tabs" role="tablist" aria-label="Filter projects by category">
+                {categories.map((name) => (
+                  <li key={name} role="presentation">
+                    <button
+                      type="button"
+                      role="tab"
+                      className="bw-tab"
+                      aria-selected={category === name}
+                      onClick={() => setCategory(name)}
+                    >
+                      {name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <div className="row g-4">
+              {visible.map((item) => (
+                <div className="col-sm-6 col-lg-4 col-xl-3" key={item.id}>
+                  <Card flush>
+                    <Image src={item.image} alt={item.title} className="bw-card__media" />
+                    <div className="bw-card__body">
+                      <h2 className="bw-card__title mb-1" style={{ fontSize: '0.9375rem' }}>
+                        {item.title}
+                      </h2>
+                      <p className="small text-muted mb-0">{item.category}</p>
+                    </div>
+                  </Card>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </AsyncSection>
         </div>
       </section>
     </>
   );
-};
-
-export default Gallery;
+}

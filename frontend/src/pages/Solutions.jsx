@@ -1,126 +1,122 @@
-import SEO from '../components/SEO';
-import React, { useState, useEffect } from 'react';
-import * as FaIcons from 'react-icons/fa';
-import { Link } from 'react-router-dom';
-import ServiceModal from '../components/ServiceModal';
+import React, { useState } from 'react';
+import { catalogApi } from '../api';
+import { useApiResource } from '../hooks';
+import { SEO } from '../components/common';
+import { PageBanner } from '../components/layout';
+import { AsyncSection, Button, EmptyState, SectionHeading } from '../components/ui';
+import ServiceCard from '../components/services/ServiceCard';
+import ServiceModal from '../components/services/ServiceModal';
+import TechnologyCard from '../components/services/TechnologyCard';
+import ProcessSteps from '../components/services/ProcessSteps';
+import { FaTint } from 'react-icons/fa';
 
-const Solutions = () => {
-  const [services, setServices] = useState([]);
-  const [technologies, setTechnologies] = useState([]);
-  const [processSteps, setProcessSteps] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+export default function Solutions() {
   const [selectedService, setSelectedService] = useState(null);
 
-  const renderIcon = (iconName) => {
-    const Icon = FaIcons[iconName];
-    return Icon ? <Icon /> : <FaIcons.FaTint />;
-  };
-
-  useEffect(() => {
-    fetch('http://localhost:5000/api/services').then(r => r.json()).then(setServices);
-    fetch('http://localhost:5000/api/technologies').then(r => r.json()).then(setTechnologies);
-    fetch('http://localhost:5000/api/process-steps').then(r => r.json()).then(setProcessSteps);
-  }, []);
+  const services = useApiResource((options) => catalogApi.listServices(options), { initialData: [] });
+  const technologies = useApiResource((options) => catalogApi.listTechnologies(options), { initialData: [] });
+  const processSteps = useApiResource((options) => catalogApi.listProcessSteps(options), { initialData: [] });
 
   return (
     <>
-
-      <SEO 
-        title="Our Services & Technologies - Water Treatment Solutions"
-        description="Explore our comprehensive water treatment services including purification, bottling plants, desalination, disinfection, and advanced technologies like RO, UV, and EDI systems."
-        keywords="water purification services, RO systems Kenya, UV sterilization, water bottling solutions, desalination systems, EDI water treatment"
-        url="https://www.bluewellhorizonlimited.com/services"
+      <SEO
+        title="Services and technologies"
+        description="Water purification, bottling plants, desalination and disinfection, delivered with RO, UV, EDI and other treatment technologies."
+        keywords="water purification services, RO systems Kenya, UV sterilisation, water bottling solutions, desalination systems, EDI water treatment"
+        path="/services"
       />
-      {/* Header */}
-      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(13, 13, 13, 0.95), rgba(32, 34, 36, 0.95)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
-        <div className="container py-5">
-          <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffff' }}>Comprehensive Services & <span className="fst-italic" style={{ color: '#7dd3e3' }}>Advanced Technologies</span></h1>
-          <p className="lead mb-0" style={{ color: '#cbd5e0', maxWidth: '700px' }}>We combine industry-leading water treatment technologies with expert engineering to deliver tailored solutions.</p>
+
+      <PageBanner
+        eyebrow="Services and technologies"
+        title="Treatment systems, engineered end to end"
+        lead="We pair proven treatment technology with our own engineering so each system matches the water it has to handle."
+      />
+
+      <section className="bw-section">
+        <div className="container">
+          <SectionHeading
+            title="Core services"
+            lead="Select any service to see what it covers, where it fits and what you get."
+            className="mb-5"
+          />
+
+          <AsyncSection
+            loading={services.loading}
+            error={services.error}
+            onRetry={services.reload}
+            loadingText="Loading services"
+            isEmpty={!services.data?.length}
+            empty={
+              <EmptyState
+                icon={<FaTint />}
+                title="No services listed yet"
+                description="Services appear here once they are added in the admin dashboard."
+                action={<Button to="/contact">Ask us what we offer</Button>}
+              />
+            }
+          >
+            <div className="row g-4">
+              {(services.data || []).map((service) => (
+                <div className="col-md-6 col-lg-4" key={service.id}>
+                  <ServiceCard service={service} onSelect={setSelectedService} />
+                </div>
+              ))}
+            </div>
+          </AsyncSection>
         </div>
       </section>
 
-      {/* Section 1: Core Services */}
-      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
-        <div className="container py-5">
-          <div className="text-center mb-5">
-            <h2 className="display-6 fw-bold mb-3" style={{ color: '#0b2540' }}>Our Core Services</h2>
-            <p className="text-muted mx-auto" style={{ maxWidth: '600px' }}>End-to-end water treatment solutions designed for reliability and efficiency.</p>
-          </div>
-          <div className="row g-4">
-            {services.map((service) => (
-              <div className="col-md-6 col-lg-4" key={service.id}>
-                <div className="p-4 rounded-4 h-100 d-flex flex-column" style={{ border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.3s ease' }}
-                     onClick={() => { setSelectedService(service); setShowModal(true); }}
-                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2fa5b6'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                  <div className="d-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: '56px', height: '56px', backgroundColor: '#2fa5b6', color: '#ffffff' }}>
-                    {renderIcon(service.icon)}
-                  </div>
-                  <h5 className="fw-bold mb-3" style={{ color: '#0b2540' }}>{service.title}</h5>
-                  <p className="mb-4 flex-grow-1" style={{ color: '#718096' }}>{service.shortDesc}</p>
-                  <span className="fw-semibold d-flex align-items-center gap-2" style={{ color: '#2fa5b6' }}>Learn More <FaIcons.FaArrowRight size={14} /></span>
+      <section className="bw-section bw-section--tint">
+        <div className="container">
+          <SectionHeading
+            title="The technologies behind them"
+            lead="Each system combines several of these, chosen against your water test results."
+            className="mb-5"
+          />
+
+          <AsyncSection
+            loading={technologies.loading}
+            error={technologies.error}
+            onRetry={technologies.reload}
+            loadingText="Loading technologies"
+          >
+            <div className="row g-4">
+              {(technologies.data || []).map((technology) => (
+                <div className="col-md-6 col-lg-4" key={technology.id}>
+                  <TechnologyCard technology={technology} />
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </AsyncSection>
         </div>
       </section>
 
-      {/* Section 2: Technology Stack */}
-      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
-        <div className="container py-5">
-          <div className="text-center mb-5">
-            <h2 className="display-6 fw-bold mb-3" style={{ color: '#0b2540' }}>Technology Stack That Powers Our Solutions</h2>
-            <p className="text-muted mx-auto" style={{ maxWidth: '600px' }}>We deploy cutting-edge technologies tailored to your specific water challenges.</p>
-          </div>
-          <div className="row g-4">
-            {technologies.map((tech) => (
-              <div className="col-md-6 col-lg-4" key={tech.id}>
-                <div className="p-4 rounded-4 h-100" style={{ border: '1px solid #e2e8f0', backgroundColor: '#ffffff', transition: 'all 0.3s ease' }}
-                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2fa5b6'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                  <div className="d-flex align-items-center gap-3 mb-3">
-                    <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px', backgroundColor: '#f0f9fa', color: '#2fa5b6' }}>
-                      {renderIcon(tech.icon)}
-                    </div>
-                    <h6 className="fw-bold mb-0" style={{ color: '#0b2540' }}>{tech.name}</h6>
-                  </div>
-                  <p className="mb-0 small" style={{ color: '#718096', lineHeight: 1.6 }}>{tech.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <section className="bw-section">
+        <div className="container">
+          <SectionHeading align="center" title="How a project runs" className="mb-5" />
 
-      {/* Section 3: How It Works */}
-      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
-        <div className="container py-5">
-          <div className="text-center mb-5">
-            <h2 className="display-6 fw-bold mb-3" style={{ color: '#0b2540' }}>How We Combine Services & Technology</h2>
-          </div>
-          <div className="row g-4 justify-content-center">
-            {processSteps.map((step) => (
-              <div className="col-md-4" key={step.id}>
-                <div className="text-center p-4">
-                  <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: '60px', height: '60px', backgroundColor: '#2fa5b6', color: '#ffffff', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {step.stepNumber}
-                  </div>
-                  <h5 className="fw-bold mb-2" style={{ color: '#0b2540' }}>{step.title}</h5>
-                  <p className="text-muted small">{step.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <AsyncSection
+            loading={processSteps.loading}
+            error={processSteps.error}
+            onRetry={processSteps.reload}
+            loadingText="Loading process"
+          >
+            <ProcessSteps steps={processSteps.data || []} />
+          </AsyncSection>
+
           <div className="text-center mt-5">
-            <Link to="/contact" className="btn btn-primary btn-lg rounded-pill px-5" style={{ backgroundColor: '#2fa5b6', border: 'none' }}>Get a Free Consultation</Link>
+            <Button to="/contact" size="lg">
+              Book a free consultation
+            </Button>
           </div>
         </div>
       </section>
 
-      <ServiceModal show={showModal} handleClose={() => setShowModal(false)} service={selectedService} />
+      <ServiceModal
+        service={selectedService}
+        open={Boolean(selectedService)}
+        onClose={() => setSelectedService(null)}
+      />
     </>
   );
-};
-
-export default Solutions;
+}

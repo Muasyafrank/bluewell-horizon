@@ -36,6 +36,16 @@ class CheckoutRequest(BaseModel):
     vatAmount: float = 0
     totalAmount: float
 
+class OrderItemDetail(BaseModel):
+    id: int
+    productId: int
+    quantity: int
+    price: float
+    name: str
+    image: Optional[str] = None
+    category: Optional[str] = None
+
+
 class OrderResponse(CamelModel):
     id: int
     order_number: str
@@ -53,6 +63,9 @@ class OrderResponse(CamelModel):
     total_amount: float
     order_status: str
     created_at: Optional[datetime] = None
+    # Populated by the router from each order's line items; not on the ORM
+    # model directly, so it defaults to empty rather than failing validation.
+    items: List[OrderItemDetail] = []
 
 class CheckoutResponse(BaseModel):
     message: str

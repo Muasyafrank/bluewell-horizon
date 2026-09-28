@@ -1,0 +1,90 @@
+/*
+ * Water-drop loading animation.
+ * Previously the ripple keyframes were declared twice in the same file, so the
+ * second declaration silently overrode the first and the large variant animated
+ * at the small variant's size. There is now one set of keyframes, and the sizes
+ * are driven by a custom property.
+ */
+
+.bw-loader {
+  --bw-loader-size: 80px;
+  --bw-loader-drop: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bw-space-5);
+  padding: var(--bw-space-7) var(--bw-space-4);
+}
+
+.bw-loader--page {
+  min-height: 60vh;
+}
+
+.bw-loader--sm {
+  --bw-loader-size: 40px;
+  --bw-loader-drop: 12px;
+  padding: var(--bw-space-4);
+}
+
+.bw-loader__figure {
+  position: relative;
+  width: var(--bw-loader-size);
+  height: var(--bw-loader-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bw-loader__drop {
+  position: absolute;
+  width: var(--bw-loader-drop);
+  height: var(--bw-loader-drop);
+  background: var(--bw-teal);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  animation: bw-drop-fall 1.5s ease-in infinite;
+}
+
+.bw-loader__ripple {
+  position: absolute;
+  border: 2px solid var(--bw-teal);
+  border-radius: 50%;
+  opacity: 0;
+  animation: bw-ripple 1.5s ease-out infinite;
+}
+
+.bw-loader__ripple:nth-of-type(2) { animation-delay: 0.5s; }
+.bw-loader__ripple:nth-of-type(3) { animation-delay: 1s; }
+
+.bw-loader__text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bw-navy);
+  letter-spacing: 0.02em;
+}
+
+@keyframes bw-drop-fall {
+  0%   { top: -30%; opacity: 0; transform: rotate(-45deg) scale(0.5); }
+  50%  { opacity: 1; transform: rotate(-45deg) scale(1); }
+  100% { top: 30%; opacity: 0; transform: rotate(-45deg) scale(0.8); }
+}
+
+@keyframes bw-ripple {
+  0%   { width: var(--bw-loader-drop); height: var(--bw-loader-drop); opacity: 1; }
+  100% { width: var(--bw-loader-size); height: var(--bw-loader-size); opacity: 0; }
+}
+
+/* With reduced motion the animation is replaced by a static, quiet indicator. */
+@media (prefers-reduced-motion: reduce) {
+  .bw-loader__drop,
+  .bw-loader__ripple {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .bw-loader__ripple:first-of-type {
+    width: var(--bw-loader-size);
+    height: var(--bw-loader-size);
+  }
+}

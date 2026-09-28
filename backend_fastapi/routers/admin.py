@@ -17,7 +17,9 @@ from schemas.admin import (
     ProductCreate, ServiceCreate, GalleryCreate,
     TechnologyCreate, ProcessStepCreate, QuoteResponse
 )
+from schemas.company_info import CompanyInfoUpdate
 from core.security import get_current_admin
+from core.email import send_email
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
@@ -502,17 +504,20 @@ def delete_process_step(
 # ============================================
 @router.put("/company-info")
 def update_company_info(
-    info: dict,
+    info: CompanyInfoUpdate,
     admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
+    # `info` arrived as a validated CompanyInfoUpdate (camelCase in, snake_case
+    # fields out), not a raw dict — see the schema's docstring for why the old
+    # `dict` version never actually saved anything.
+    updates = info.model_dump(exclude_unset=True)
     existing = db.query(CompanyInfo).first()
     if existing:
-        for key, value in info.items():
-            if hasattr(existing, key):
-                setattr(existing, key, value)
+        for key, value in updates.items():
+            setattr(existing, key, value)
     else:
-        new_info = CompanyInfo(**info)
+        new_info = CompanyInfo(**updates)
         db.add(new_info)
     db.commit()
     return {"message": "Company information updated successfully"}
@@ -563,52 +568,44 @@ async def upload_image(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Return the path that matches what the frontend expects
-    image_path = f"/images/{unique_filename}"
+    # Served under /uploads/ rather than /images/ — the frontend's own public
+    # assets (fallback product photos, hero/banner images) also live under
+    # /images/, and reusing that prefix for backend uploads made assetUrl()
+    # unable to tell the two apart: it rewrote every "/images/..." path to
+    # point at the API host, breaking every image that was actually a
+    # frontend-bundled asset (they don't exist on the API server).
+    image_path = f"/uploads/{unique_filename}"
     return {"imagePath": image_path}
 
 # ============================================
 # EMAIL HELPER
 # ============================================
 def send_status_email(order, new_status: str):
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-    from dotenv import load_dotenv
-    load_dotenv()
+    """Notifies a customer that their order status changed.
 
-    email_user = os.getenv("EMAIL_USER")
-    email_pass = os.getenv("EMAIL_PASS")
-    if not email_user or not email_pass:
-        return
-
+    Previously duplicated the SMTP connection logic already written in
+    routers/orders.py and routers/quotes.py, with its own load_dotenv() call.
+    Now delegates to core.email.send_email like the others.
+    """
     status_messages = {
         "processing": "Your order is being processed.",
         "confirmed": "Your order has been confirmed and is being prepared.",
         "shipped": "Your order has been shipped and is on its way!",
         "delivered": "Your order has been delivered. Thank you for choosing Bluewell Horizon!",
-        "cancelled": "Your order has been cancelled. Please contact us for more information."
+        "cancelled": "Your order has been cancelled. Please contact us for more information.",
     }
 
-    msg = MIMEMultipart()
-    msg['From'] = email_user
-    msg['To'] = order.customer_email
-    msg['Subject'] = f"Order Update - {order.order_number}"
-
-    body = f"""
-    <h2>Order Status Update</h2>
-    <p>Dear {order.customer_name},</p>
-    <p>Your order <strong>{order.order_number}</strong> status has been updated to: 
-    <strong style="color: #2fa5b6; text-transform: uppercase;">{new_status}</strong></p>
-    <p>{status_messages.get(new_status, '')}</p>
-    <p>For any inquiries, contact us at 0721-633-223 or bluewellsynergy@gmail.com</p>
-    <br/>
-    <p>Best regards,<br/>Bluewell Horizon Team</p>
-    """
-
-    msg.attach(MIMEText(body, 'html'))
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
-    server.login(email_user, email_pass)
-    server.send_message(msg)
-    server.quit()
+    send_email(
+        subject=f"Order update — {order.order_number}",
+        to=order.customer_email,
+        body=f"""
+        <h2>Order status update</h2>
+        <p>Dear {order.customer_name},</p>
+        <p>Your order <strong>{order.order_number}</strong> status has been updated to:
+        <strong style="color: #2fa5b6; text-transform: uppercase;">{new_status}</strong></p>
+        <p>{status_messages.get(new_status, '')}</p>
+        <p>For any inquiries, contact us at 0721 633 223 or bluewellsynergy@gmail.com</p>
+        <br/>
+        <p>Best regards,<br/>Bluewell Horizon Team</p>
+        """,
+    )

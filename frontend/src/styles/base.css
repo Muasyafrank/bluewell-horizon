@@ -1,0 +1,93 @@
+/* Global element styles and resets. Layered on top of Bootstrap. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,600&family=Space+Mono:wght@400;700&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Stop in-page anchors from landing under the fixed navbar. */
+  scroll-padding-top: var(--bw-navbar-height);
+}
+
+body {
+  margin: 0;
+  font-family: var(--bw-font-sans);
+  color: var(--bw-text);
+  background-color: var(--bw-white);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Keyboard users must always be able to see where they are. */
+:focus-visible {
+  outline: 3px solid var(--bw-teal);
+  outline-offset: 2px;
+  border-radius: var(--bw-radius-sm);
+}
+
+/* The app owns focus styling, so remove Bootstrap's blue glow. */
+.form-control:focus,
+.form-select:focus,
+.btn:focus {
+  border-color: var(--bw-teal);
+  box-shadow: 0 0 0 3px rgba(47, 165, 182, 0.18);
+}
+
+a {
+  color: var(--bw-teal-dark);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--bw-navy);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Body copy stays inside a comfortable measure. */
+.bw-prose {
+  max-width: var(--bw-content-max);
+  line-height: 1.7;
+  color: var(--bw-text-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skip link for keyboard and screen-reader users. */
+.bw-skip-link {
+  position: absolute;
+  left: var(--bw-space-4);
+  top: -100px;
+  z-index: 2000;
+  padding: var(--bw-space-3) var(--bw-space-5);
+  background: var(--bw-teal);
+  color: var(--bw-navy-deep);
+  font-weight: 700;
+  border-radius: var(--bw-radius-pill);
+  transition: top var(--bw-transition);
+}
+
+.bw-skip-link:focus {
+  top: var(--bw-space-4);
+}

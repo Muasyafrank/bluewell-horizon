@@ -1,0 +1,75 @@
+/*
+ * Design tokens for Bluewell Horizon.
+ * Every colour, radius, shadow and spacing step used in the app is defined here.
+ * Components reference these variables instead of hard-coding hex values inline.
+ */
+
+:root {
+  /* Brand palette (taken from the logo) */
+  --bw-navy: #0b2540;
+  --bw-navy-deep: #06111c;
+  --bw-navy-surface: #091c2e;
+  --bw-teal: #2fa5b6;
+  --bw-teal-dark: #1f8494;
+  --bw-teal-light: #7dd3e3;
+  --bw-cyan-pale: #90deeb;
+  --bw-blue: #0072a3;
+
+  /* Neutrals */
+  --bw-white: #ffffff;
+  --bw-surface: #f8fafc;
+  --bw-surface-tint: #f0f9fa;
+  --bw-border: #e2e8f0;
+  --bw-border-tint: #d1e8eb;
+  --bw-text: #1a2b3c;
+  --bw-text-muted: #64748b;
+  --bw-text-soft: #718096;
+  --bw-text-on-dark: #cbd5e0;
+  --bw-text-on-dark-muted: #95b5c4;
+  --bw-text-on-dark-faint: #5a7a8c;
+
+  /* Status colours */
+  --bw-success: #15803d;
+  --bw-success-bg: #dcfce7;
+  --bw-warning: #a16207;
+  --bw-warning-bg: #fef3c7;
+  --bw-danger: #b91c1c;
+  --bw-danger-bg: #fee2e2;
+  --bw-info: #1d4ed8;
+  --bw-info-bg: #dbeafe;
+
+  /* Typography */
+  --bw-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bw-font-display: 'Playfair Display', Georgia, serif;
+  --bw-font-mono: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Spacing scale */
+  --bw-space-1: 0.25rem;
+  --bw-space-2: 0.5rem;
+  --bw-space-3: 0.75rem;
+  --bw-space-4: 1rem;
+  --bw-space-5: 1.5rem;
+  --bw-space-6: 2rem;
+  --bw-space-7: 3rem;
+  --bw-space-8: 4rem;
+
+  /* Radii */
+  --bw-radius-sm: 8px;
+  --bw-radius-md: 12px;
+  --bw-radius-lg: 16px;
+  --bw-radius-xl: 24px;
+  --bw-radius-pill: 999px;
+
+  /* Elevation */
+  --bw-shadow-sm: 0 1px 2px rgba(11, 37, 64, 0.06);
+  --bw-shadow-md: 0 4px 12px rgba(11, 37, 64, 0.08);
+  --bw-shadow-lg: 0 12px 32px rgba(11, 37, 64, 0.12);
+  --bw-shadow-teal: 0 8px 24px rgba(47, 165, 182, 0.18);
+
+  /* Motion */
+  --bw-transition: 200ms ease;
+
+  /* Layout */
+  --bw-navbar-height: 88px;
+  --bw-content-max: 70ch;
+}

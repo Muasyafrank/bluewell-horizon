@@ -1,86 +1,123 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { authApi } from '../../api';
 import { useCustomer } from '../../context/CustomerContext';
-import { FaUser, FaEnvelope, FaLock, FaPhone } from 'react-icons/fa';
-import { toastSuccess, toastError } from '../../utils/toast';
+import { SEO } from '../../components/common';
+import { Button, Field } from '../../components/ui';
+import { email, kenyanPhone, minLength, required, validate } from '../../utils/validation';
+import { toastError, toastSuccess } from '../../utils/toast';
 
-const CustomerRegister = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
-  const [loading, setLoading] = useState(false);
+const RULES = {
+  name: [required('Tell us your name')],
+  email: [required('We need an email address'), email()],
+  phone: [required('We need a phone number for deliveries'), kenyanPhone()],
+  password: [required('Choose a password'), minLength(8, 'Use at least 8 characters')],
+};
+
+export default function CustomerRegister() {
+  const [values, setValues] = useState({ name: '', email: '', phone: '', password: '' });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useCustomer();
   const navigate = useNavigate();
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setValues((current) => ({ ...current, [name]: value }));
+    setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    // The form only enforced a 6-character minimum via the browser's own
+    // `minLength`, with no feedback on anything else.
+    const validationErrors = validate(values, RULES);
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
+      document.querySelector('[aria-invalid="true"]')?.focus();
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:5000/api/customers/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      
-      if (res.ok) {
-        login(data.token, data.customer);
-        toastSuccess(`Welcome to Bluewell Horizon, ${data.customer.name}!`);
-        setTimeout(() => navigate('/'), 500);
-      } else {
-        toastError(data.message || 'Registration failed');
-      }
-    } catch (err) {
-      toastError('Network error. Please check your connection.');
-    } finally {
-      setLoading(false);
+      const data = await authApi.customerRegister(values);
+      login(data.token, data.customer);
+      toastSuccess(`Welcome to Bluewell Horizon, ${data.customer.name.split(' ')[0]}`);
+      navigate('/account', { replace: true });
+    } catch (error) {
+      toastError(error.message);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" style={{ backgroundColor: '#f8fafc', paddingTop: '140px' }}>
-      <div className="p-5 rounded-4 shadow-sm" style={{ width: '100%', maxWidth: '450px', backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
-        <div className="text-center mb-4">
-          <h3 className="fw-bold" style={{ color: '#0b2540' }}>Create Account</h3>
-          <p className="text-muted small">Join us to track your orders and get exclusive support.</p>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label small fw-semibold">Full Name</label>
-            <div className="input-group">
-              <span className="input-group-text bg-white border-end-0"><FaUser style={{ color: '#2fa5b6' }} /></span>
-              <input type="text" name="name" className="form-control border-start-0" value={formData.name} onChange={handleChange} required style={{ borderRadius: '0 10px 10px 0' }} />
-            </div>
+    <>
+      <SEO title="Create an account" path="/register" noIndex />
+
+      <div className="bw-auth-shell">
+        <div className="bw-auth-card">
+          <div className="text-center mb-4">
+            <Link to="/" aria-label="Bluewell Horizon, home">
+              <img src="/logo.png" alt="" width="56" height="56" style={{ borderRadius: '50%' }} />
+            </Link>
+            <h1 className="h4 mt-3 mb-1">Create an account</h1>
+            <p className="small text-muted mb-0">Track orders and check out faster next time.</p>
           </div>
-          <div className="mb-3">
-            <label className="form-label small fw-semibold">Email Address</label>
-            <div className="input-group">
-              <span className="input-group-text bg-white border-end-0"><FaEnvelope style={{ color: '#2fa5b6' }} /></span>
-              <input type="email" name="email" className="form-control border-start-0" value={formData.email} onChange={handleChange} required style={{ borderRadius: '0 10px 10px 0' }} />
-            </div>
-          </div>
-          <div className="mb-3">
-            <label className="form-label small fw-semibold">Phone Number</label>
-            <div className="input-group">
-              <span className="input-group-text bg-white border-end-0"><FaPhone style={{ color: '#2fa5b6' }} /></span>
-              <input type="tel" name="phone" className="form-control border-start-0" value={formData.phone} onChange={handleChange} required style={{ borderRadius: '0 10px 10px 0' }} />
-            </div>
-          </div>
-          <div className="mb-4">
-            <label className="form-label small fw-semibold">Password</label>
-            <input type="password" name="password" className="form-control" value={formData.password} onChange={handleChange} required minLength="6" style={{ borderRadius: '10px' }} />
-          </div>
-          <button type="submit" className="btn w-100 py-2 fw-bold text-white" disabled={loading} style={{ backgroundColor: '#2fa5b6', borderRadius: '10px' }}>
-            {loading ? 'Creating Account...' : 'Register'}
-          </button>
-        </form>
-        <div className="text-center mt-4">
-          <p className="mb-0 small text-muted">Already have an account? <Link to="/login" style={{ color: '#2fa5b6' }} className="fw-semibold">Login here</Link></p>
+
+          <form onSubmit={handleSubmit} noValidate>
+            <Field
+              label="Full name"
+              name="name"
+              value={values.name}
+              onChange={handleChange}
+              error={errors.name}
+              autoComplete="name"
+              required
+            />
+            <Field
+              label="Email address"
+              name="email"
+              type="email"
+              value={values.email}
+              onChange={handleChange}
+              error={errors.email}
+              autoComplete="email"
+              required
+            />
+            <Field
+              label="Phone number"
+              name="phone"
+              type="tel"
+              value={values.phone}
+              onChange={handleChange}
+              error={errors.phone}
+              autoComplete="tel"
+              placeholder="0712 345 678"
+              required
+            />
+            <Field
+              label="Password"
+              name="password"
+              type="password"
+              value={values.password}
+              onChange={handleChange}
+              error={errors.password}
+              hint="At least 8 characters."
+              autoComplete="new-password"
+              required
+            />
+
+            <Button type="submit" block size="lg" loading={submitting} loadingText="Creating account">
+              Create account
+            </Button>
+          </form>
+
+          <p className="text-center small text-muted mt-4 mb-0">
+            Already registered? <Link to="/login">Sign in</Link>
+          </p>
         </div>
       </div>
-    </div>
+    </>
   );
-};
-
-export default CustomerRegister;
+}

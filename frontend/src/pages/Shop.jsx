@@ -1,196 +1,196 @@
-import React, { useState, useEffect } from 'react';
-import { products, productCategories } from '../data/products';
-import { FaShoppingCart, FaFilter, FaSearch, FaPlus, FaMinus } from 'react-icons/fa';
+import React, { useEffect, useMemo, useState } from "react";
+import { FaSearch, FaBoxOpen } from 'react-icons/fa';
+import { catalogApi } from '../api';
+import { useApiResource, useDebouncedValue } from '../hooks';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { SEO } from '../components/common';
+import { AsyncSection, Button, EmptyState, Field, Pagination } from '../components/ui';
+import ProductCard from '../components/shop/ProductCard';
+import CategorySidebar from '../components/shop/CategorySidebar';
+import { products as fallbackProducts } from '../data/products';
+import { PRODUCT_CATEGORIES } from '../data/categories';
 import { toastSuccess } from '../utils/toast';
+import { pluralise } from '../utils/format';
 
-const Shop = () => {
-  const { cart, addToCart, updateQuantity } = useCart();
-  const [filteredProducts, setFilteredProducts] = useState(products);
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('default');
+const ALL = 'All';
+const PAGE_SIZE = 12;
+
+const SORT_OPTIONS = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'name', label: 'Name: A to Z' },
+];
+export default function Shop() {
+  const { addItem, setQuantity, quantityOf, maxQuantity } = useCart();
+  const { isWishlisted, toggleItem: toggleWishlist } = useWishlist();
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState(ALL);
+  const [sort, setSort] = useState('featured');
+  const [page, setPage] = useState(1);
+
+  const debouncedSearch = useDebouncedValue(search, 250);
+
+  const { data, loading, error, reload } = useApiResource((options) => catalogApi.listProducts(options), { initialData: null },);
+  const products = data?.length ? data : fallbackProducts;
+  const usingFallback = Boolean(error) || !data?.length;
+
+  const categories = PRODUCT_CATEGORIES;
+
+  const searchMatched = useMemo(() => {
+    const term = debouncedSearch.trim().toLowerCase();
+    if (!term) return products;
+    return products.filter(
+      (product) => product.name?.toLowerCase().includes(term) || product.description?.toLowerCase().includes(term),
+    );
+  }, [products, debouncedSearch]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = { [ALL]: searchMatched.length };
+    searchMatched.forEach((product) => {
+      if (!product.category) return;
+      counts[product.category] = (counts[product.category] || 0) + 1;
+    });
+    return counts;
+  }, [searchMatched]);
+
+  const visibleProducts = useMemo(() => {
+    const filtered = category === ALL ? searchMatched : searchMatched.filter((product) => product.category === category);
+
+    if (sort === 'name') {
+      return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return filtered;
+  }, [searchMatched, category, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleProducts.length / PAGE_SIZE));
+  const pagedProducts = visibleProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => {
-    let filtered = products;
+    setPage(1);
 
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
+  }, [category, debouncedSearch, sort]);
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Sort products
-    switch (sortBy) {
-      case 'price-low':
-        filtered = [...filtered].sort((a, b) => a.price - b.price);
-        break;
-      case 'price-high':
-        filtered = [...filtered].sort((a, b) => b.price - a.price);
-        break;
-      case 'name':
-        filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        break;
-    }
-
-    setFilteredProducts(filtered);
-  }, [selectedCategory, searchTerm, sortBy]);
-
-  const getCartQuantity = (productId) => {
-    const item = cart.find(item => item.id === productId);
-    return item ? item.quantity : 0;
+  const handleAdd = (product) => {
+    addItem(product);
+    toastSuccess(`${product.name} added to your cart`);
   };
 
-  const handleAddToCart = (product) => {
-    addToCart(product);
-    toastSuccess(`${product.name} added to cart!`);
+  const handleToggleWishlist = (product) => {
+    const wasWishlisted = isWishlisted(product.id);
+    toggleWishlist(product);
+    toastSuccess(wasWishlisted ? `${product.name} removed from your wishlist` : `${product.name} saved to your wishlist`);
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setCategory(ALL);
+    setSort('featured');
   };
 
   return (
-    <div className="min-vh-100" style={{ backgroundColor: '#f8fafc', paddingTop: '100px' }}>
-      <div className="container py-5">
-        {/* Header */}
-        <div className="text-center mb-5">
-          <h1 className="fw-bold mb-3" style={{ color: '#0b2540' }}>Our Products</h1>
-          <p className="text-muted">High-quality water treatment systems for every need</p>
-        </div>
+    <>
+      <SEO
+        title="Shop"
+        description="Browse water purification, disinfection, softening and filtration system with delivery across Kenya"
+        path="/shop"
+      />
+      <section className="bw-page bw-section">
+        <div className="container">
+          <div className="bw-catalog">
+            <CategorySidebar
+              categories={categories}
+              active={category}
+              onSelect={setCategory}
+              counts={categoryCounts}
+            />
 
-        {/* Filters */}
-        <div className="row g-3 mb-4">
-          <div className="col-md-6">
-            <div className="input-group">
-              <span className="input-group-text bg-white border-end-0">
-                <FaSearch className="text-muted" />
-              </span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="col-md-3">
-            <select
-              className="form-select"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              {productCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3">
-            <select
-              className="form-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="default">Sort by</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="name">Name: A to Z</option>
-            </select>
-          </div>
-        </div>
+            <div>
+              <div className="bw-catalog-header">
+                <span className="bw-catalog-header__title">Product Center</span>
+                <span className="bw-catalog-header__crumb">Home / Shop / {category}</span>
+              </div>
 
-        {/* Products Grid */}
-        <div className="row g-4">
-          {filteredProducts.map(product => {
-            const cartQty = getCartQuantity(product.id);
-            
-            return (
-              <div key={product.id} className="col-md-6 col-lg-4">
-                <div className="card h-100 border-0 shadow-sm hover-shadow">
-                  <div className="position-relative">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="card-img-top"
-                      style={{ height: '250px', objectFit: 'cover' }}
-                    />
-                    {cartQty > 0 && (
-                      <span
-                        className="badge position-absolute top-0 end-0 m-2 rounded-pill"
-                        style={{ backgroundColor: '#2fa5b6' }}
-                      >
-                        {cartQty} in cart
-                      </span>
-                    )}
-                    <span
-                      className="badge position-absolute top-0 start-0 m-2 rounded-pill"
-                      style={{ backgroundColor: '#0b2540' }}
-                    >
-                      {product.category}
-                    </span>
-                  </div>
-                  <div className="card-body d-flex flex-column">
-                    <h5 className="card-title fw-bold mb-2" style={{ color: '#0b2540' }}>
-                      {product.name}
-                    </h5>
-                    <p className="card-text text-muted small flex-grow-1">
-                      {product.description}
-                    </p>
-                    <div className="mt-3">
-                      <h4 className="fw-bold mb-3" style={{ color: '#2fa5b6' }}>
-                        KES {product.price.toLocaleString()}
-                      </h4>
-                      
-                      {cartQty === 0 ? (
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="btn w-100 text-white rounded-pill"
-                          style={{ backgroundColor: '#2fa5b6' }}
-                        >
-                          <FaShoppingCart className="me-2" />
-                          Add to Cart
-                        </button>
-                      ) : (
-                        <div className="d-flex align-items-center justify-content-between">
-                          <button
-                            onClick={() => updateQuantity(product.id, cartQty - 1)}
-                            className="btn btn-outline-secondary rounded-circle"
-                            style={{ width: '40px', height: '40px' }}
-                          >
-                            <FaMinus />
-                          </button>
-                          <span className="fw-bold fs-5">{cartQty}</span>
-                          <button
-                            onClick={() => updateQuantity(product.id, cartQty + 1)}
-                            className="btn btn-outline-secondary rounded-circle"
-                            style={{ width: '40px', height: '40px' }}
-                          >
-                            <FaPlus />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              <div className="bw-catalog-toolbar">
+                <div className="bw-catalog-toolbar__search">
+                  <Field
+                    label="Search products"
+                    name="search"
+                    type="search"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Try “reverse osmosis” or “UV”"
+                    className="mb-0"
+                  />
+                </div>
+                <div className="bw-catalog-toolbar__sort">
+                  <Field
+                    label="Sort by"
+                    name="sort"
+                    as="select"
+                    value={sort}
+                    onChange={(event) => setSort(event.target.value)}
+                    options={SORT_OPTIONS}
+                    className="mb-0"
+                  />
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-5">
-            <p className="text-muted fs-5">No products found matching your criteria.</p>
+              <AsyncSection
+                loading={loading && !usingFallback}
+                error={null}
+                onRetry={reload}
+                loadingText="Loading products"
+              >
+                <p className="small text-muted mb-3" aria-live="polite">
+                  {visibleProducts.length} {pluralise(visibleProducts.length, 'product')} in {category}
+                </p>
+
+                {visibleProducts.length === 0 ? (
+                  <EmptyState
+                    icon={<FaSearch />}
+                    title="Nothing matches those filters"
+                    description="Try a different search term or clear the filters to see the full range."
+                    action={
+                      <Button variant="outline" onClick={clearFilters}>
+                        Clear filters
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <>
+                    <div className="row g-3">
+                      {pagedProducts.map((product) => (
+                        <div className="col-6 col-lg-3" key={product.id}>
+                          <ProductCard
+                            product={product}
+                            quantity={quantityOf(product.id)}
+                            maxQuantity={maxQuantity}
+                            onAdd={handleAdd}
+                            onSetQuantity={setQuantity}
+                            wishlisted={isWishlisted(product.id)}
+                            onToggleWishlist={handleToggleWishlist}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <Pagination page={page} pageCount={pageCount} onChange={setPage} />
+                  </>
+                )}
+              </AsyncSection>
+
+              {products.length === 0 ? (
+                <EmptyState
+                  icon={<FaBoxOpen />}
+                  title="The shop is being stocked"
+                  description="Products will appear here shortly. In the meantime we can quote for any system directly."
+                  action={<Button to="/quote">Request a quote</Button>}
+                />
+              ) : null}
+            </div>
           </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default Shop;
+        </div>
+      </section>
+    </>
+  )
+}

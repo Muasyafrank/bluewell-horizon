@@ -1,172 +1,237 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FaPaperPlane, FaSpinner, FaCheckCircle, FaBuilding, FaUser, FaEnvelope, FaPhoneAlt, FaClipboardList } from 'react-icons/fa';
-import SEO from '../components/SEO';
-import { toastSuccess, toastError } from '../utils/toast';
+import { FaPaperPlane } from 'react-icons/fa';
+import { enquiriesApi } from '../api';
+import { SEO } from '../components/common';
+import { PageBanner } from '../components/layout';
+import { Alert, Button, Card, Field } from '../components/ui';
+import { CONTACT_DETAILS, QUOTE_SERVICE_OPTIONS } from '../data/company';
+import { email, kenyanPhone, required, validate } from '../utils/validation';
+import { toastError, toastSuccess } from '../utils/toast';
 
-const Quote = () => {
-  const [formData, setFormData] = useState({
-    name: '', email: '', phone: '', companyName: '', serviceType: '', projectDetails: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+const INITIAL_VALUES = {
+  name: '',
+  email: '',
+  phone: '',
+  companyName: '',
+  serviceType: '',
+  projectDetails: '',
+};
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+const RULES = {
+  name: [required('Tell us your name')],
+  companyName: [required('Which organisation is this for?')],
+  email: [required('We need an email for the proposal'), email()],
+  phone: [required('A phone number helps us clarify details'), kenyanPhone()],
+  serviceType: [required('Choose the type of project')],
+  projectDetails: [required('Describe the project so we can scope it')],
+};
+
+const REASONS = [
+  { title: 'Sized to your capacity', description: 'Specified against your throughput, water test and budget.' },
+  { title: 'Engineer-led assessment', description: 'A free initial site assessment before anything is quoted.' },
+  { title: 'Itemised pricing', description: 'Equipment, installation and commissioning listed separately.' },
+  { title: 'Answered within a day', description: 'Every quote request gets a response inside one working day.' },
+];
+
+export default function Quote() {
+  const [values, setValues] = useState(INITIAL_VALUES);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setValues((current) => ({ ...current, [name]: value }));
+    setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const validationErrors = validate(values, RULES);
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
+      document.querySelector('[aria-invalid="true"]')?.focus();
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:5000/api/quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      if (res.ok) {
-        toastSuccess('Quote request submitted successfully! We will contact you shortly.');
-        setSuccess(true);
-        setFormData({ name: '', email: '', phone: '', companyName: '', serviceType: '', projectDetails: '' });
-        setTimeout(() => setSuccess(false), 5000);
-      } else {
-        toastError('Failed to submit request. Please try again.');
-      }
-    } catch (err) {
-      toastError('Network error. Please check your connection.');
+      await enquiriesApi.submitQuote(values);
+      setValues(INITIAL_VALUES);
+      setSent(true);
+      toastSuccess('Quote request received. We will be in touch within a working day.');
+    } catch (error) {
+      toastError(error.message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <>
-      <SEO 
-        title="Request a Quote - Custom Water Treatment Solutions"
-        description="Request a custom quote for industrial water treatment, bottling plants, desalination, or ultrapure water systems from Bluewell Horizon Limited."
+      <SEO
+        title="Request a quote"
+        description="Request a custom quote for industrial water treatment, bottling plants, desalination or ultrapure water systems."
         keywords="water treatment quote Kenya, bottling plant cost, desalination system price, industrial water treatment Nairobi"
-        url="https://www.bluewellhorizonlimited.com/quote"
+        path="/quote"
       />
 
-      {/* Page Header */}
-      <section className="py-5" style={{ 
-        backgroundImage: `linear-gradient(rgba(6, 17, 28, 0.7), rgba(6, 17, 28, 0.9)), url('/images/gallery-3.png')`,
-        backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '300px', display: 'flex', alignItems: 'center'
-      }}>
-        <div className="container py-5">
-          <div className="d-flex align-items-center gap-3 mb-4">
-            <div style={{ width: '40px', height: '1px', backgroundColor: '#2fa5b6' }}></div>
-            <span className="text-uppercase small fw-semibold" style={{ color: '#2fa5b6', letterSpacing: '3px' }}>Get a Custom Quote</span>
-          </div>
-          <h1 className="display-4 fw-bold mb-4" style={{ color: '#ffffff', lineHeight: 1.2, maxWidth: '800px' }}>
-            Tailored solutions for your <span className="fst-italic" style={{ color: '#7dd3e3' }}>specific needs.</span>
-          </h1>
-          <p className="lead mb-0" style={{ color: '#cbd5e0', maxWidth: '700px' }}>
-            For large-scale projects like bottling plants, desalination, or industrial systems, tell us about your requirements and we'll provide a customized proposal.
-          </p>
-        </div>
-      </section>
+      <PageBanner
+        eyebrow="Request a quote"
+        title="Tell us about the project"
+        lead="For bottling lines, desalination and industrial systems, send us the requirements and we will put together a costed proposal."
+      />
 
-      {/* Quote Form Section */}
-      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
-        <div className="container py-5">
-          <div className="row g-5 justify-content-center">
+      <section className="bw-section">
+        <div className="container">
+          <div className="row g-5">
             <div className="col-lg-8">
-              {success && (
-                <div className="alert d-flex align-items-center gap-2 rounded-3 mb-4" style={{ backgroundColor: '#d4edda', color: '#155724', border: '1px solid #c3e6cb' }}>
-                  <FaCheckCircle />
-                  <span>Thank you! Your quote request has been received. Our team will review it and contact you within 24 hours.</span>
-                </div>
-              )}
+              {sent ? (
+                <Alert tone="success">
+                  Quote request received. Our engineers will review it and contact you within one
+                  working day.
+                </Alert>
+              ) : null}
 
-              <div className="p-4 p-md-5 rounded-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <h3 className="fw-bold mb-4" style={{ color: '#0b2540' }}>Project Details</h3>
-                <form onSubmit={handleSubmit}>
+              <Card tint>
+                <h2 className="h5 mb-4">Project details</h2>
+
+                <form onSubmit={handleSubmit} noValidate>
                   <div className="row g-3">
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold" style={{ color: '#0b2540' }}>Full Name *</label>
-                      <div className="input-group">
-                        <span className="input-group-text bg-white border-end-0"><FaUser style={{ color: '#2fa5b6' }} /></span>
-                        <input type="text" className="form-control border-start-0" name="name" value={formData.name} onChange={handleChange} required style={{ borderRadius: '0 12px 12px 0' }} />
-                      </div>
+                      <Field
+                        label="Full name"
+                        name="name"
+                        value={values.name}
+                        onChange={handleChange}
+                        error={errors.name}
+                        autoComplete="name"
+                        required
+                        className="mb-0"
+                      />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold" style={{ color: '#0b2540' }}>Company Name *</label>
-                      <div className="input-group">
-                        <span className="input-group-text bg-white border-end-0"><FaBuilding style={{ color: '#2fa5b6' }} /></span>
-                        <input type="text" className="form-control border-start-0" name="companyName" value={formData.companyName} onChange={handleChange} required style={{ borderRadius: '0 12px 12px 0' }} />
-                      </div>
+                      <Field
+                        label="Company or organisation"
+                        name="companyName"
+                        value={values.companyName}
+                        onChange={handleChange}
+                        error={errors.companyName}
+                        autoComplete="organization"
+                        required
+                        className="mb-0"
+                      />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold" style={{ color: '#0b2540' }}>Email Address *</label>
-                      <div className="input-group">
-                        <span className="input-group-text bg-white border-end-0"><FaEnvelope style={{ color: '#2fa5b6' }} /></span>
-                        <input type="email" className="form-control border-start-0" name="email" value={formData.email} onChange={handleChange} required style={{ borderRadius: '0 12px 12px 0' }} />
-                      </div>
+                      <Field
+                        label="Email address"
+                        name="email"
+                        type="email"
+                        value={values.email}
+                        onChange={handleChange}
+                        error={errors.email}
+                        autoComplete="email"
+                        required
+                        className="mb-0"
+                      />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold" style={{ color: '#0b2540' }}>Phone Number *</label>
-                      <div className="input-group">
-                        <span className="input-group-text bg-white border-end-0"><FaPhoneAlt style={{ color: '#2fa5b6' }} /></span>
-                        <input type="tel" className="form-control border-start-0" name="phone" value={formData.phone} onChange={handleChange} required placeholder="+254 7XX XXX XXX" style={{ borderRadius: '0 12px 12px 0' }} />
-                      </div>
+                      <Field
+                        label="Phone number"
+                        name="phone"
+                        type="tel"
+                        value={values.phone}
+                        onChange={handleChange}
+                        error={errors.phone}
+                        autoComplete="tel"
+                        placeholder="+254 7XX XXX XXX"
+                        required
+                        className="mb-0"
+                      />
                     </div>
                     <div className="col-12">
-                      <label className="form-label small fw-semibold" style={{ color: '#0b2540' }}>Service Needed *</label>
-                      <div className="input-group">
-                        <span className="input-group-text bg-white border-end-0"><FaClipboardList style={{ color: '#2fa5b6' }} /></span>
-                        <select className="form-select border-start-0" name="serviceType" value={formData.serviceType} onChange={handleChange} required style={{ borderRadius: '0 12px 12px 0' }}>
-                          <option value="">Select a service...</option>
-                          <option value="Water Bottling Plant Solutions">Water Bottling Plant Solutions</option>
-                          <option value="Desalination Systems">Desalination Systems</option>
-                          <option value="UltraPure Water Systems (EDI)">UltraPure Water Systems (EDI)</option>
-                          <option value="Industrial Water Purification">Industrial Water Purification</option>
-                          <option value="Water Diagnosis & System Design">Water Diagnosis & System Design</option>
-                          <option value="Other / Custom Project">Other / Custom Project</option>
-                        </select>
-                      </div>
+                      <Field
+                        label="Type of project"
+                        name="serviceType"
+                        as="select"
+                        value={values.serviceType}
+                        onChange={handleChange}
+                        error={errors.serviceType}
+                        required
+                        className="mb-0"
+                      >
+                        <option value="">Select a project type</option>
+                        {QUOTE_SERVICE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </Field>
                     </div>
                     <div className="col-12">
-                      <label className="form-label small fw-semibold" style={{ color: '#0b2540' }}>Project Details & Requirements *</label>
-                      <textarea 
-                        className="form-control" 
-                        name="projectDetails" 
-                        value={formData.projectDetails} 
-                        onChange={handleChange} 
-                        required 
-                        rows="5" 
-                        placeholder="Please describe your project scope, expected capacity, location, and any specific requirements..."
-                        style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px' }}
-                      ></textarea>
+                      <Field
+                        label="Requirements"
+                        name="projectDetails"
+                        as="textarea"
+                        rows={6}
+                        value={values.projectDetails}
+                        onChange={handleChange}
+                        error={errors.projectDetails}
+                        placeholder="Scope, expected capacity, site location, timelines and anything else we should know."
+                        required
+                        className="mb-0"
+                      />
                     </div>
-                    <div className="col-12 mt-4">
-                      <button type="submit" className="btn btn-lg rounded-pill px-5 d-inline-flex align-items-center gap-2" style={{ backgroundColor: '#2fa5b6', color: '#ffffff', border: 'none' }} disabled={loading}>
-                        {loading ? <><FaSpinner className="spin" /> Submitting...</> : <><FaPaperPlane /> Request Quote</>}
-                      </button>
+                    <div className="col-12">
+                      <Button
+                        type="submit"
+                        size="lg"
+                        loading={submitting}
+                        loadingText="Sending"
+                        icon={<FaPaperPlane aria-hidden="true" />}
+                      >
+                        Request a quote
+                      </Button>
                     </div>
                   </div>
                 </form>
-              </div>
+              </Card>
             </div>
 
-            {/* Sidebar Info */}
             <div className="col-lg-4">
-              <div className="p-4 rounded-4 h-100" style={{ backgroundColor: '#0b2540', color: '#ffffff' }}>
-                <h4 className="fw-bold mb-4">Why Request a Quote?</h4>
-                <ul className="list-unstyled mb-4" style={{ lineHeight: 1.8, color: '#cbd5e0' }}>
-                  <li className="mb-3"> <strong>Customized Solutions:</strong> Tailored to your exact capacity and budget.</li>
-                  <li className="mb-3"> <strong>Expert Consultation:</strong> Free initial assessment by our engineers.</li>
-                  <li className="mb-3"> <strong>Transparent Pricing:</strong> Detailed breakdown of equipment and installation.</li>
-                  <li className="mb-3"> <strong>Fast Turnaround:</strong> We respond to all quote requests within 24 hours.</li>
+              <div className="bw-card bw-sticky-aside" style={{ backgroundColor: 'var(--bw-navy)', borderColor: 'var(--bw-navy)' }}>
+                <h2 className="h5 mb-4" style={{ color: 'var(--bw-white)' }}>
+                  What you get
+                </h2>
+                <ul className="list-unstyled mb-4">
+                  {REASONS.map((reason) => (
+                    <li className="mb-4" key={reason.title}>
+                      <strong className="d-block mb-1" style={{ color: 'var(--bw-white)' }}>
+                        {reason.title}
+                      </strong>
+                      <span className="small" style={{ color: 'var(--bw-text-on-dark)' }}>
+                        {reason.description}
+                      </span>
+                    </li>
+                  ))}
                 </ul>
-                <hr style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                <p className="small mb-0" style={{ color: '#95b5c4' }}>
-                  Prefer to talk? Call us directly:<br/>
-                  <strong style={{ color: '#2fa5b6', fontSize: '1.1rem' }}>0721-633-223</strong><br/>
-                  <strong style={{ color: '#2fa5b6', fontSize: '1.1rem' }}>0731-836-349</strong>
+
+                <hr style={{ borderColor: 'rgba(255,255,255,0.12)' }} />
+
+                <p className="small mb-2" style={{ color: 'var(--bw-text-on-dark-muted)' }}>
+                  Prefer to talk it through?
                 </p>
+                {CONTACT_DETAILS.phones.map((phone) => (
+                  <a
+                    key={phone}
+                    href={`tel:${phone.replace(/\s/g, '')}`}
+                    className="d-block fw-bold"
+                    style={{ color: 'var(--bw-teal-light)' }}
+                  >
+                    {phone}
+                  </a>
+                ))}
               </div>
             </div>
           </div>
@@ -174,6 +239,4 @@ const Quote = () => {
       </section>
     </>
   );
-};
-
-export default Quote;
+}

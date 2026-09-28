@@ -5,21 +5,22 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-import os
-from dotenv import load_dotenv
 
+from config import settings
 from database import get_db
 from models import Admin, Customer
 
-load_dotenv()
-
-# Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key-change-this-in-production")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 1440))
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 # HTTP Bearer authentication (works perfectly with Swagger UI)
 security = HTTPBearer()
+# Guest checkout needs to accept a request with no Authorization header at all;
+# HTTPBearer() alone raises 403 before the route body ever runs. This variant
+# does not raise when the header is missing, so it can be used to *optionally*
+# identify who is checking out.
+optional_security = HTTPBearer(auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(
@@ -87,3 +88,26 @@ def get_current_customer(credentials: HTTPAuthorizationCredentials = Depends(sec
     if customer is None:
         raise credentials_exception
     return customer
+
+
+def get_current_customer_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+    db: Session = Depends(get_db),
+) -> Optional[Customer]:
+    """Returns the signed-in customer if a valid token was sent, else None.
+
+    Used by checkout, which must work for guests but should link the order to
+    an account when one is signed in. Any problem with the token (missing,
+    expired, unknown customer) is treated as "no one is signed in" rather than
+    an error, since checkout itself did not require authentication.
+    """
+    if credentials is None:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        customer_id = payload.get("sub")
+    except JWTError:
+        return None
+    if customer_id is None:
+        return None
+    return db.query(Customer).filter(Customer.id == customer_id).first()

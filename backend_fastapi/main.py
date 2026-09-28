@@ -3,31 +3,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-# from flask_cors import CORS
-from database import Base,engine
-from models import*
-from routers import auth,products,services,gallery,technologies,process_steps,company_info,orders,quotes,admin
-
-
+from config import settings
+from database import Base, engine
+from models import *  # noqa: F401,F403 — registers every model with Base before create_all
+from routers import (
+    auth, products, services, gallery, technologies, process_steps,
+    company_info, orders, quotes, admin, contact,
+)
 
 app = FastAPI(
     title="Bluewell Horizon API",
     description="Backend API for Bluewell Horizon Limited",
-    version="1.0.0"
+    version="1.0.0",
 )
 Base.metadata.create_all(bind=engine)
-# CORS Configuration (Allow your React frontend)
+
+# CORS origins come from configuration rather than being hard-coded, so
+# staging and production deployments don't silently inherit a localhost-only
+# allow list.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","http://127.0.0.1:5000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Serve static files (for uploaded images)
+# Serve uploaded images. Mounted at /uploads rather than /images so it can
+# never collide with the frontend's own bundled /images/ assets — see the
+# note in routers/admin.py's upload handler for why that collision mattered.
 os.makedirs("static/uploads", exist_ok=True)
-app.mount("/images", StaticFiles(directory="static/uploads"), name="images")
+app.mount("/uploads", StaticFiles(directory="static/uploads"), name="uploads")
 
 app.include_router(auth.router)
 app.include_router(products.router)
@@ -38,6 +44,7 @@ app.include_router(process_steps.router)
 app.include_router(company_info.router)
 app.include_router(orders.router)
 app.include_router(quotes.router)
+app.include_router(contact.router)
 app.include_router(admin.router)
 
 # Health check route

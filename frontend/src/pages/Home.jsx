@@ -1,210 +1,141 @@
-import SEO from '../components/SEO';
-import React, { useState, useEffect } from 'react';
-// import { FaTint, FaClock, FaAward, FaCheckCircle, FaTools, FaWater, FaPhone, FaShieldAlt, FaArrowRight } from 'react-icons/fa';
-import { FaTint, FaClock, FaAward, FaCheckCircle, FaTools, FaWater, FaPhone, FaShieldAlt, FaArrowRight, FaBullseye, FaEye, FaHandshake, FaLeaf, FaLightbulb, FaUsers, FaChartLine } from 'react-icons/fa';
-import * as FaIcons from 'react-icons/fa'; // Import all FA icons to map from DB strings
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { FaArrowRight } from 'react-icons/fa';
+import { catalogApi } from '../api';
+import { useApiResource } from '../hooks';
+import { SEO, Image } from '../components/common';
+import { AsyncSection, Button, Card, SectionHeading } from '../components/ui';
+import Hero from '../components/marketing/Hero';
+import ValueGrid from '../components/marketing/ValueGrid';
+import ServiceCard from '../components/services/ServiceCard';
+import { CORE_VALUES, MISSION, VISION } from '../data/company';
 
-const Home = () => {
-  const [services, setServices] = useState([]);
-  const [gallery, setGallery] = useState([]);
+export default function Home() {
+  // Both requests used to fire with no error handling at all; a stopped API
+  // produced an unhandled rejection and two permanently empty sections.
+  const services = useApiResource((options) => catalogApi.listServices(options), { initialData: [] });
+  const gallery = useApiResource((options) => catalogApi.listGallery(options), { initialData: [] });
 
-  // Helper to render icons from database string names
-  const renderIcon = (iconName) => {
-    const Icon = FaIcons[iconName];
-    return Icon ? <Icon /> : <FaTint />;
-  };
-
-  useEffect(() => {
-    // Fetch Services and Gallery from Backend
-    fetch('http://localhost:5000/api/services')
-      .then(res => res.json())
-      .then(data => setServices(data.slice(0, 6))) // Get first 6 for homepage
-      .catch(err => console.error("Error fetching services:", err));
-
-    fetch('http://localhost:5000/api/gallery')
-      .then(res => res.json())
-      .then(data => setGallery(data))
-      .catch(err => console.error("Error fetching gallery:", err));
-  }, []);
+  const featuredServices = (services.data || []).slice(0, 6);
+  const featuredGallery = (gallery.data || []).slice(0, 6);
 
   return (
     <>
-     <SEO 
-        title="Home - Water Treatment Solutions in Kenya"
-        description="Bluewell Horizon Limited - Leading provider of water purification, desalination, and bottling plant solutions in Kenya. Trusted by residential, commercial, and industrial clients."
-        keywords="water treatment Kenya, water purification Nairobi, reverse osmosis Kenya, water bottling plant, desalination Kenya, Bluewell Horizon"
-        url="https://www.bluewellhorizonlimited.com"
+      <SEO
+        title="Water treatment solutions in Kenya"
+        description="Water purification, desalination and bottling plant solutions for residential, commercial and industrial clients across Kenya."
+        keywords="water treatment Kenya, water purification Nairobi, reverse osmosis Kenya, water bottling plant, desalination Kenya"
       />
-      {/* Hero Section */}
-      <section className="hero-section-dark d-flex align-items-center position-relative" style={{ paddingTop: '140px', minHeight: '100vh', backgroundImage: `linear-gradient(rgba(147, 149, 150, 0.25), rgba(140, 145, 149, 0.9)), url('/images/gallery-3.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div className="container position-relative" style={{ zIndex: 2 }}>
-          <div className="row justify-content-center text-center">
-            <div className="col-lg-10">
-              <h2 className="fw-bold mb-0" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', letterSpacing: '2px', lineHeight: 1.1 }}>
-                <span style={{ color: '#ffffff' }}>BLUEWELL</span>{' '}<span style={{ color: '#2fa5b6' }}>HORIZON</span>
-              </h2>
-              <h3 className="fw-light mb-0 mt-1" style={{ color: '#95b5c4', fontSize: 'clamp(1rem, 2vw, 1.5rem)', letterSpacing: '8px', textTransform: 'uppercase' }}>LIMITED</h3>
-              <h1 className="display-3 fw-bold mb-4 mt-4" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', color: '#ffffff' }}>
-                Pure water,<br />engineered with <span className="fst-italic" style={{ color: '#7dd3e3' }}>precision.</span>
-              </h1>
-              <p className="lead mb-5 mx-auto" style={{ maxWidth: '650px', color: '#030e14', fontWeight: '300' }}>
-                Bluewell Horizon Limited designs, supplies, installs and maintains advanced water treatment systems for homes, businesses, institutions and industries.
-              </p>
-              <div className="d-flex flex-wrap justify-content-center gap-3">
-                <Link to="/contact" className="btn btn-light btn-lg rounded-pill px-5 fw-bold">Get a Free Consultation</Link>
-                <Link to="/services" className="btn btn-outline-light btn-lg rounded-pill px-5">Explore Services</Link>
-              </div>
+
+      <Hero />
+
+      <section className="bw-section bw-section--tint">
+        <div className="container">
+          <div className="row g-4 g-lg-5 mb-5">
+            <div className="col-lg-6">
+              <Card className="h-100">
+                <h2 className="h4 mb-3">{MISSION.title}</h2>
+                <p className="bw-lead mb-4">{MISSION.lead}</p>
+                <p className="bw-prose mb-0">{MISSION.body}</p>
+              </Card>
+            </div>
+            <div className="col-lg-6">
+              <Card className="h-100">
+                <h2 className="h4 mb-3">{VISION.title}</h2>
+                <p className="bw-lead mb-4">{VISION.lead}</p>
+                <p className="bw-prose mb-0">{VISION.body}</p>
+              </Card>
             </div>
           </div>
+
+          <SectionHeading
+            align="center"
+            title="What guides our work"
+            lead="Eight commitments that shape how we specify, install and support every system."
+            className="mb-5"
+          />
+
+          <ValueGrid items={CORE_VALUES} />
         </div>
       </section>
 
+      <section className="bw-section">
+        <div className="container">
+          <SectionHeading
+            eyebrow="Our services"
+            title="Water solutions built around your supply"
+            lead="From a single household filter to a full bottling line, sized on the results of your own water test."
+            className="mb-5"
+          />
 
-      {/* Mission, Vision & Values Section */}
-<section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
-  <div className="container py-5">
-    <div className="row g-5 mb-5">
-      {/* Mission */}
-      <div className="col-lg-6">
-        <div className="p-5 rounded-4 h-100" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <div className="d-flex align-items-center gap-3 mb-4">
-            <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px', backgroundColor: '#2fa5b6', color: '#ffffff', fontSize: '1.5rem' }}>
-              <FaBullseye />
-            </div>
-            <h3 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Our Mission</h3>
-          </div>
-          <p className="lead mb-4" style={{ color: '#4a5568', lineHeight: 1.8, fontWeight: '300' }}>
-            To design, supply, and maintain reliable, innovative water treatment systems for residential, commercial, and industrial clients — ensuring access to safe, clean water at every level.
-          </p>
-          <p className="mb-0" style={{ color: '#718096', lineHeight: 1.7 }}>
-            We are committed to delivering affordable, high-quality solutions tailored to the unique needs of each client, powered by modern technology and professional expertise. Upholding integrity, transparency, and timely service, we strive for continuous improvement and sustainable water use, building long-term partnerships grounded in trust and excellence.
-          </p>
-        </div>
-      </div>
-
-      {/* Vision */}
-      <div className="col-lg-6">
-        <div className="p-5 rounded-4 h-100" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <div className="d-flex align-items-center gap-3 mb-4">
-            <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px', backgroundColor: '#2fa5b6', color: '#ffffff', fontSize: '1.5rem' }}>
-              <FaEye />
-            </div>
-            <h3 className="fw-bold mb-0" style={{ color: '#0b2540' }}>Our Vision</h3>
-          </div>
-          <p className="lead mb-4" style={{ color: '#4a5568', lineHeight: 1.8, fontWeight: '300' }}>
-            To become the leading and most trusted provider of water treatment solutions in the region, recognized as a reliable partner in delivering advanced, sustainable, and innovative water systems.
-          </p>
-          <p className="mb-0" style={{ color: '#718096', lineHeight: 1.7 }}>
-            We envision a future where every community has access to safe and clean water, driven by our commitment to excellence, integrity, and environmental responsibility. Through the adoption of emerging technologies and continuous improvement in service delivery, we aspire to set industry standards while positively impacting lives and contributing to a healthier, more sustainable world for generations to come.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    {/* Core Values */}
-    <div className="text-center mb-5">
-      <div className="d-inline-flex align-items-center gap-3 mb-4">
-        <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
-        <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>What Guides Us</span>
-        <div style={{ width: '40px', height: '1px', backgroundColor: '#cbd5e0' }}></div>
-      </div>
-      <h2 className="display-5 fw-bold mb-3" style={{ color: '#0b2540', lineHeight: 1.2 }}>
-        Our Core <span className="fst-italic" style={{ color: '#2fa5b6' }}>Values</span>
-      </h2>
-      <p className="lead mx-auto" style={{ color: '#4a5568', maxWidth: '700px', fontWeight: '300' }}>
-        These principles define who we are and how we serve our clients.
-      </p>
-    </div>
-
-    <div className="row g-4">
-      {[
-        { icon: FaAward, title: 'Excellence', desc: 'Delivering the highest quality water treatment solutions that exceed expectations.' },
-        { icon: FaShieldAlt, title: 'Integrity', desc: 'Upholding honesty, transparency, and ethical practices in all our operations.' },
-        { icon: FaHandshake, title: 'Trust', desc: 'Building long-term partnerships grounded in reliability and mutual respect.' },
-        { icon: FaLeaf, title: 'Sustainability', desc: 'Promoting environmental responsibility and sustainable water use for future generations.' },
-        { icon: FaClock, title: 'Timely Service', desc: 'Committed to fast response times and on-time project delivery.' },
-        { icon: FaLightbulb, title: 'Innovation', desc: 'Adopting emerging technologies and continuous improvement in service delivery.' },
-        { icon: FaUsers, title: 'Customer Satisfaction', desc: 'Tailoring solutions to meet the unique needs of each client.' },
-        { icon: FaChartLine, title: 'Continuous Improvement', desc: 'Striving for excellence through ongoing learning and development.' }
-      ].map((value, index) => (
-        <div className="col-md-6 col-lg-3" key={index}>
-          <div className="p-4 rounded-4 h-100 text-center" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', transition: 'all 0.3s ease' }}
-               onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2fa5b6'; e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(47, 165, 182, 0.12)'; }}
-               onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-            <div className="d-flex align-items-center justify-content-center rounded-circle mb-3 mx-auto" style={{ width: '70px', height: '70px', backgroundColor: '#f0f9fa', color: '#2fa5b6', fontSize: '1.8rem' }}>
-              <value.icon />
-            </div>
-            <h5 className="fw-bold mb-3" style={{ color: '#0b2540', fontSize: '1.1rem' }}>{value.title}</h5>
-            <p className="mb-0 small" style={{ color: '#718096', lineHeight: 1.6 }}>{value.desc}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
-
-      {/* Featured Services Section (Dynamic) */}
-      <section className="py-5" style={{ backgroundColor: '#ffffff' }}>
-        <div className="container py-5">
-          <div className="text-center mb-5">
-            <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>Our Services</span>
-            <h2 className="display-5 fw-bold mb-3 mt-2" style={{ color: '#0b2540' }}>Comprehensive water solutions <span className="fst-italic" style={{ color: '#2fa5b6' }}>tailored to you</span></h2>
-          </div>
-          <div className="row g-4">
-            {services.map((service) => (
-              <div className="col-md-6 col-lg-4" key={service.id}>
-                <div className="p-4 rounded-4 h-100 d-flex flex-column" style={{ border: '1px solid #e2e8f0', backgroundColor: '#ffffff', transition: 'all 0.3s ease' }}
-                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2fa5b6'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                  <div className="d-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: '56px', height: '56px', backgroundColor: '#2fa5b6', color: '#ffffff', fontSize: '1.4rem' }}>
-                    {renderIcon(service.icon)}
-                  </div>
-                  <h5 className="fw-bold mb-3" style={{ color: '#0b2540' }}>{service.title}</h5>
-                  <p className="mb-4 flex-grow-1" style={{ color: '#718096', lineHeight: 1.6 }}>{service.shortDesc}</p>
-                  <Link to="/services" className="text-decoration-none fw-semibold d-flex align-items-center gap-2" style={{ color: '#2fa5b6' }}>Learn More <FaArrowRight size={14} /></Link>
+          <AsyncSection
+            loading={services.loading}
+            error={services.error}
+            onRetry={services.reload}
+            loadingText="Loading services"
+          >
+            <div className="row g-4">
+              {featuredServices.map((service) => (
+                <div className="col-md-6 col-lg-4" key={service.id}>
+                  <ServiceCard service={service} />
                 </div>
+              ))}
+            </div>
+
+            {featuredServices.length > 0 ? (
+              <div className="text-center mt-5">
+                <Button to="/services" variant="outline" iconAfter={<FaArrowRight aria-hidden="true" />}>
+                  See all services
+                </Button>
               </div>
-            ))}
-          </div>
+            ) : null}
+          </AsyncSection>
         </div>
       </section>
 
-      {/* Image Gallery Section (Dynamic) */}
-      <section className="py-5" style={{ backgroundColor: '#f8fafc' }}>
-        <div className="container py-5">
-          <div className="text-center mb-5">
-            <span className="text-uppercase small fw-semibold" style={{ color: '#0b2540', letterSpacing: '3px' }}>Our Work</span>
-            <h2 className="display-5 fw-bold mb-3 mt-2" style={{ color: '#0b2540' }}>Projects & <span className="fst-italic" style={{ color: '#2fa5b6' }}>Installations</span></h2>
-          </div>
-          <div className="row g-4">
-            {gallery.map((item) => (
-              <div className="col-md-4" key={item.id}>
-                <div className="rounded-4 overflow-hidden" style={{ border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <div style={{ overflow: 'hidden', height: '250px' }}>
-                    <img src={item.image} alt={item.title} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                  </div>
-                  <div className="p-4">
-                    <span className="badge rounded-pill mb-2" style={{ backgroundColor: '#f0f9fa', color: '#2fa5b6', border: '1px solid #d1e8eb' }}>{item.category}</span>
-                    <h6 className="fw-bold mb-0" style={{ color: '#0b2540' }}>{item.title}</h6>
-                  </div>
+      <section className="bw-section bw-section--tint">
+        <div className="container">
+          <SectionHeading
+            eyebrow="Our work"
+            title="Projects and installations"
+            lead="A sample of systems we have designed, installed and now maintain."
+            className="mb-5"
+          />
+
+          <AsyncSection
+            loading={gallery.loading}
+            error={gallery.error}
+            onRetry={gallery.reload}
+            loadingText="Loading projects"
+          >
+            <div className="row g-4">
+              {featuredGallery.map((item) => (
+                <div className="col-md-6 col-lg-4" key={item.id}>
+                  <Card flush>
+                    <Image src={item.image} alt={item.title} className="bw-card__media" />
+                    <div className="bw-card__body">
+                      <p className="small text-muted mb-1">{item.category}</p>
+                      <h3 className="bw-card__title mb-0">{item.title}</h3>
+                    </div>
+                  </Card>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </AsyncSection>
         </div>
       </section>
-      
-      {/* CTA Section */}
-      <section className="py-5" style={{ backgroundImage: `linear-gradient(rgba(101, 103, 105, 0.8), rgba(114, 117, 119, 0.9)), url('/images/gallery-2.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div className="container py-5 text-center">
-          <h2 className="display-5 fw-bold mb-4" style={{ color: '#ffffff' }}>Ready to transform your water quality?</h2>
-          <p className="lead mb-5 mx-auto" style={{ color: '#cbd5e0', maxWidth: '700px' }}>Contact us today for a free water diagnosis and system design consultation.</p>
-          <Link to="/contact" className="btn btn-light btn-lg rounded-pill px-5 fw-bold">Get Free Consultation</Link>
+
+      <section className="bw-band bw-section" style={{ backgroundImage: "url('/images/gallery-2.png')" }}>
+        <div className="container text-center">
+          <h2 className="display-6 fw-bold mb-3">Not sure what your water needs?</h2>
+          <p className="bw-lead mx-auto mb-5">
+            Book a free water test and system design consultation. We will tell you what is in your
+            supply and what it would take to fix it.
+          </p>
+          <Button to="/contact" variant="onDark" size="lg">
+            Book a free consultation
+          </Button>
         </div>
       </section>
     </>
   );
-};
-
-export default Home;
+}
