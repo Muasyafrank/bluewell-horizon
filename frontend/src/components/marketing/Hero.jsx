@@ -16,7 +16,7 @@ export default function Hero() {
         <div className="row justify-content-center text-center">
           <div className="col-lg-10">
             <p className="bw-wordmark mb-1">
-              Bluewell <span>Horizon</span>
+              Bluewell <span>Horizon</span> Solutions
             </p>
             <p className="bw-wordmark__sub">Limited</p>
 

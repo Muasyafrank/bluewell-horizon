@@ -1,20 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCheckCircle, FaLock, FaPhoneAlt, FaShieldAlt, FaTruck } from 'react-icons/fa';
+import { FaChevronDown, FaLock, FaPhoneAlt, FaTruck } from 'react-icons/fa';
 import { ordersApi } from '../api';
 import { useCart } from '../context/CartContext';
 import { useCustomer } from '../context/CustomerContext';
 import { SEO, Image } from '../components/common';
 import { PageBanner } from '../components/layout';
-import { Button, Card, Field } from '../components/ui';
-import DeliveryOptions from '../components/checkout/DeliveryOptions';
-import PaymentOptions from '../components/checkout/PaymentOptions';
-import OrderSummary from '../components/shop/OrderSummary';
+import { Button, Card, Field, SearchableSelect } from '../components/ui';
 import { COUNTIES, VAT_RATE, getDeliveryOption } from '../utils/kenyanData';
-import { formatCurrency } from '../utils/format';
 import { email, kenyanPhone, required, validate } from '../utils/validation';
 import { toastError } from '../utils/toast';
 import { CONTACT_DETAILS } from '../data/company';
+
+// Payment method and delivery method selection were removed from this page
+// on request. A real order still needs some value in both fields on the
+// backend, and the business still needs to know how the customer intends to
+// be reached about payment — so rather than silently guess, every order now
+// says plainly it will be followed up by phone. "standard" delivery is used
+// internally for the ETA shown and for the (hidden) fee calculation the
+// admin dashboard still relies on for its own totals.
+const DEFAULT_DELIVERY_METHOD = 'standard';
+const DEFAULT_PAYMENT_METHOD = 'cod';
 
 const INITIAL_VALUES = {
   customerName: '',
@@ -23,37 +29,21 @@ const INITIAL_VALUES = {
   companyName: '',
   kraPin: '',
   county: '',
-  constituency: '',
   estate: '',
   streetAddress: '',
-  buildingName: '',
-  apartmentNumber: '',
-  poBox: '',
-  postalCode: '',
-  deliveryMethod: 'standard',
-  paymentMethod: 'mpesa',
-  mpesaPhone: '',
-  mpesaReference: '',
+  addressDetails: '',
   notes: '',
 };
 
-/** Validation rules, applied on submit and re-checked as fields are corrected. */
-function buildRules(values) {
-  const rules = {
+function buildRules() {
+  return {
     customerName: [required('Tell us who the order is for')],
-    customerEmail: [required('We need an email for the receipt'), email()],
-    customerPhone: [required('We need a phone number for delivery'), kenyanPhone()],
-    county: [required('Choose a county so we can price delivery')],
+    customerEmail: [required('We need an email for confirmation'), email()],
+    customerPhone: [required('We need a phone number to arrange delivery and payment'), kenyanPhone()],
+    county: [required('Choose a county so we can arrange delivery')],
     estate: [required('Which estate or area?')],
     streetAddress: [required('Add a street name and number')],
   };
-
-  if (values.paymentMethod === 'mpesa') {
-    rules.mpesaPhone = [required('Enter the number that paid'), kenyanPhone()];
-    rules.mpesaReference = [required('Enter the M-Pesa confirmation code')];
-  }
-
-  return rules;
 }
 
 export default function Checkout() {
@@ -64,10 +54,8 @@ export default function Checkout() {
   const [values, setValues] = useState(INITIAL_VALUES);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [showBusinessDetails, setShowBusinessDetails] = useState(false);
 
-  // Send shoppers back to the shop only once, and only when the cart is empty
-  // for real — the old effect raced the cart's own load and sometimes bounced
-  // people out of a checkout they had just opened.
   useEffect(() => {
     if (isEmpty && !submitting) navigate('/shop', { replace: true });
   }, [isEmpty, submitting, navigate]);
@@ -79,27 +67,28 @@ export default function Checkout() {
       customerName: current.customerName || customer.name || '',
       customerEmail: current.customerEmail || customer.email || '',
       customerPhone: current.customerPhone || customer.phone || '',
-      mpesaPhone: current.mpesaPhone || customer.phone || '',
     }));
   }, [isAuthenticated, customer]);
 
+  // Not shown anywhere on this page — computed only so the order record
+  // created on the backend (and the admin dashboard that reads it) still has
+  // real numbers to work with.
   const { deliveryFee, vatAmount, total } = useMemo(() => {
-    const fee = values.county ? getDeliveryOption(values.county, values.deliveryMethod).fee : 0;
+    const fee = values.county ? getDeliveryOption(values.county, DEFAULT_DELIVERY_METHOD).fee : 0;
     const vat = (subtotal + fee) * VAT_RATE;
     return { deliveryFee: fee, vatAmount: vat, total: subtotal + fee + vat };
-  }, [subtotal, values.county, values.deliveryMethod]);
+  }, [subtotal, values.county]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setValues((current) => ({ ...current, [name]: value }));
-    // Clear a field's error as soon as the visitor starts fixing it.
     setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validationErrors = validate(values, buildRules(values));
+    const validationErrors = validate(values, buildRules());
     if (Object.keys(validationErrors).length) {
       setErrors(validationErrors);
       toastError('Check the highlighted fields and try again');
@@ -112,7 +101,18 @@ export default function Checkout() {
     try {
       const response = await ordersApi.checkout(
         {
-          ...values,
+          customerName: values.customerName,
+          customerEmail: values.customerEmail,
+          customerPhone: values.customerPhone,
+          companyName: values.companyName,
+          kraPin: values.kraPin,
+          county: values.county,
+          estate: values.estate,
+          streetAddress: values.streetAddress,
+          buildingName: values.addressDetails,
+          deliveryMethod: DEFAULT_DELIVERY_METHOD,
+          paymentMethod: DEFAULT_PAYMENT_METHOD,
+          notes: values.notes,
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -126,8 +126,6 @@ export default function Checkout() {
           vatAmount,
           totalAmount: total,
         },
-        // Sending the token links the order to the signed-in account, so it
-        // shows up in their order history.
         { token: isAuthenticated ? token : undefined },
       );
 
@@ -148,15 +146,15 @@ export default function Checkout() {
     <>
       <SEO
         title="Checkout"
-        description="Complete your order with M-Pesa, bank transfer or cash on delivery."
+        description="Submit your order and we'll be in touch to arrange delivery and payment."
         path="/checkout"
         noIndex
       />
 
       <PageBanner
         eyebrow="Checkout"
-        title="Complete your order"
-        lead="Delivery is priced by county. Everything is confirmed by email once the order is placed."
+        title="Submit your order"
+        lead="Give us your details and delivery address — we'll call to confirm delivery and payment."
         image="/images/gallery-5.png"
       />
 
@@ -167,7 +165,7 @@ export default function Checkout() {
               <form onSubmit={handleSubmit} noValidate>
                 <Card tint className="mb-4">
                   <h2 className="h5 d-flex align-items-center gap-2 mb-4">
-                    <FaPhoneAlt aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Contact details
+                    <FaPhoneAlt aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Your details
                   </h2>
                   <div className="row g-3">
                     <div className="col-md-6">
@@ -203,41 +201,49 @@ export default function Checkout() {
                         value={values.customerPhone}
                         onChange={handleChange}
                         error={errors.customerPhone}
-                        hint="07XX XXX XXX or +254 7XX XXX XXX"
+                        hint="We'll call this number to confirm delivery and payment."
                         autoComplete="tel"
                         required
                         className="mb-0"
                       />
                     </div>
                   </div>
-                </Card>
 
-                <Card tint className="mb-4">
-                  <h2 className="h5 mb-1">Business details</h2>
-                  <p className="small text-muted mb-4">Only needed if you want an ETR receipt.</p>
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <Field
-                        label="Company name"
-                        name="companyName"
-                        value={values.companyName}
-                        onChange={handleChange}
-                        optional
-                        autoComplete="organization"
-                        className="mb-0"
-                      />
+                  {!showBusinessDetails ? (
+                    <button
+                      type="button"
+                      className="btn btn-link p-0 mt-3 d-inline-flex align-items-center gap-2 text-decoration-none"
+                      style={{ color: 'var(--bw-teal-dark)', fontSize: '0.875rem' }}
+                      onClick={() => setShowBusinessDetails(true)}
+                    >
+                      <FaChevronDown size={11} aria-hidden="true" />
+                      Need a receipt for your business?
+                    </button>
+                  ) : (
+                    <div className="row g-3 mt-1">
+                      <div className="col-md-6">
+                        <Field
+                          label="Company name"
+                          name="companyName"
+                          value={values.companyName}
+                          onChange={handleChange}
+                          optional
+                          autoComplete="organization"
+                          className="mb-0"
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <Field
+                          label="KRA PIN"
+                          name="kraPin"
+                          value={values.kraPin}
+                          onChange={handleChange}
+                          optional
+                          className="mb-0"
+                        />
+                      </div>
                     </div>
-                    <div className="col-md-6">
-                      <Field
-                        label="KRA PIN"
-                        name="kraPin"
-                        value={values.kraPin}
-                        onChange={handleChange}
-                        optional
-                        className="mb-0"
-                      />
-                    </div>
-                  </div>
+                  )}
                 </Card>
 
                 <Card tint className="mb-4">
@@ -246,32 +252,15 @@ export default function Checkout() {
                   </h2>
                   <div className="row g-3">
                     <div className="col-md-6">
-                      <Field
+                      <SearchableSelect
                         label="County"
                         name="county"
-                        as="select"
                         value={values.county}
                         onChange={handleChange}
+                        options={COUNTIES}
                         error={errors.county}
+                        placeholder="Start typing your county…"
                         required
-                        className="mb-0"
-                      >
-                        <option value="">Select a county</option>
-                        {COUNTIES.map((county) => (
-                          <option key={county} value={county}>
-                            {county}
-                          </option>
-                        ))}
-                      </Field>
-                    </div>
-                    <div className="col-md-6">
-                      <Field
-                        label="Constituency"
-                        name="constituency"
-                        value={values.constituency}
-                        onChange={handleChange}
-                        optional
-                        placeholder="Westlands"
                         className="mb-0"
                       />
                     </div>
@@ -287,7 +276,7 @@ export default function Checkout() {
                         className="mb-0"
                       />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-12">
                       <Field
                         label="Street address"
                         name="streetAddress"
@@ -299,118 +288,54 @@ export default function Checkout() {
                         className="mb-0"
                       />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-12">
                       <Field
-                        label="Building name"
-                        name="buildingName"
-                        value={values.buildingName}
+                        label="Apartment, building or landmark"
+                        name="addressDetails"
+                        value={values.addressDetails}
                         onChange={handleChange}
                         optional
-                        className="mb-0"
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Field
-                        label="Apartment or house number"
-                        name="apartmentNumber"
-                        value={values.apartmentNumber}
-                        onChange={handleChange}
-                        optional
-                        className="mb-0"
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Field
-                        label="P.O. Box"
-                        name="poBox"
-                        value={values.poBox}
-                        onChange={handleChange}
-                        optional
-                        className="mb-0"
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Field
-                        label="Postal code"
-                        name="postalCode"
-                        value={values.postalCode}
-                        onChange={handleChange}
-                        optional
-                        autoComplete="postal-code"
-                        placeholder="00100"
+                        placeholder="e.g. Kilimani Heights, Apt 4B, opposite Yaya Centre"
                         className="mb-0"
                       />
                     </div>
                   </div>
-                </Card>
 
-                <Card tint className="mb-4">
-                  <DeliveryOptions
-                    county={values.county}
-                    value={values.deliveryMethod}
-                    onChange={handleChange}
-                  />
-                </Card>
-
-                <Card tint className="mb-4">
-                  <PaymentOptions
-                    values={values}
-                    errors={errors}
-                    onChange={handleChange}
-                    total={total}
-                  />
+                  {values.county ? (
+                    <p className="small text-muted mt-3 mb-0">
+                      Estimated delivery to {values.county}: {getDeliveryOption(values.county, DEFAULT_DELIVERY_METHOD).eta}
+                    </p>
+                  ) : null}
                 </Card>
 
                 <Card tint className="mb-4">
                   <Field
-                    label="Order notes"
+                    label="Delivery notes"
                     name="notes"
                     as="textarea"
-                    rows={3}
+                    rows={2}
                     value={values.notes}
                     onChange={handleChange}
                     optional
-                    placeholder="Gate code, landmark, preferred delivery time…"
+                    placeholder="Gate code, preferred delivery time…"
                     className="mb-0"
                   />
                 </Card>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  block
-                  loading={submitting}
-                  loadingText="Placing your order"
-                  icon={<FaLock aria-hidden="true" />}
-                >
-                  Place order · {formatCurrency(total)}
+                <Button type="submit" size="lg" block loading={submitting} loadingText="Submitting your order" icon={<FaLock aria-hidden="true" />}>
+                  Place order
                 </Button>
 
-                <ul className="list-unstyled d-flex flex-wrap justify-content-center gap-4 mt-4 mb-0 small text-muted">
-                  <li className="d-flex align-items-center gap-2">
-                    <FaShieldAlt aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Secure checkout
-                  </li>
-                  <li className="d-flex align-items-center gap-2">
-                    <FaCheckCircle aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Genuine equipment
-                  </li>
-                  <li className="d-flex align-items-center gap-2">
-                    <FaTruck aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Nationwide delivery
-                  </li>
-                </ul>
+                <p className="text-center small text-muted mt-3 mb-0">
+                  We'll call you shortly after to confirm delivery and arrange payment.
+                </p>
               </form>
             </div>
 
             <div className="col-lg-5">
-              <OrderSummary
-                itemCount={count}
-                total={total}
-                rows={[
-                  { label: 'Subtotal', value: subtotal },
-                  { label: 'Delivery', value: values.county ? deliveryFee : 'Choose a county' },
-                  { label: 'VAT (16%)', value: vatAmount },
-                ]}
-              >
-                <ul className="list-unstyled mb-4" style={{ maxHeight: '18rem', overflowY: 'auto' }}>
+              <Card tint className="bw-sticky-aside">
+                <h2 className="h5 mb-4">Your order</h2>
+                <ul className="list-unstyled mb-0">
                   {items.map((item) => (
                     <li className="d-flex gap-3 pb-3 mb-3 border-bottom" key={item.id}>
                       <Image src={item.image} alt="" className="bw-thumb bw-thumb--sm" />
@@ -418,27 +343,15 @@ export default function Checkout() {
                         <p className="fw-semibold mb-1" style={{ fontSize: '0.875rem' }}>
                           {item.name}
                         </p>
-                        <p className="small text-muted mb-1">Quantity: {item.quantity}</p>
-                        <p className="small bw-price mb-0">
-                          {formatCurrency(item.price * item.quantity)}
-                        </p>
+                        <p className="small text-muted mb-0">Quantity: {item.quantity}</p>
                       </div>
                     </li>
                   ))}
                 </ul>
-              </OrderSummary>
-
-              {values.county ? (
-                <Card className="mt-4">
-                  <p className="small fw-semibold d-flex align-items-center gap-2 mb-1">
-                    <FaTruck aria-hidden="true" style={{ color: 'var(--bw-teal)' }} />
-                    Delivery to {values.county}
-                  </p>
-                  <p className="small text-muted mb-0">
-                    {getDeliveryOption(values.county, values.deliveryMethod).eta}
-                  </p>
-                </Card>
-              ) : null}
+                <p className="small text-muted mb-0">
+                  {count} {count === 1 ? 'item' : 'items'} in this order.
+                </p>
+              </Card>
 
               <p className="text-center small text-muted mt-4 mb-0">
                 Need a hand with this order? Call {CONTACT_DETAILS.phones.join(' or ')}.

@@ -3,9 +3,8 @@ import { FaMinus, FaPlus, FaTrash } from 'react-icons/fa';
 import Badge from '../ui/Badge';
 import IconButton from '../ui/IconButton';
 import Image from '../common/Image';
-import { formatCurrency } from '../../utils/format';
 
-/** One line of the cart, with its quantity stepper and line total. */
+/** One line of the cart: image, name, quantity stepper, remove. No pricing. */
 export default function CartLine({ item, maxQuantity, onSetQuantity, onRemove }) {
   return (
     <li className="bw-card d-flex flex-wrap align-items-center gap-4">
@@ -13,8 +12,7 @@ export default function CartLine({ item, maxQuantity, onSetQuantity, onRemove })
 
       <div className="flex-grow-1" style={{ minWidth: '12rem' }}>
         {item.category ? <Badge className="mb-2">{item.category}</Badge> : null}
-        <h3 className="h6 mb-1">{item.name}</h3>
-        <p className="small text-muted mb-0">{formatCurrency(item.price)} each</p>
+        <h3 className="h6 mb-0">{item.name}</h3>
       </div>
 
       <div className="d-flex flex-column align-items-center gap-2">
@@ -43,11 +41,6 @@ export default function CartLine({ item, maxQuantity, onSetQuantity, onRemove })
         >
           <FaTrash size={11} aria-hidden="true" /> Remove
         </button>
-      </div>
-
-      <div className="text-end" style={{ minWidth: '7rem' }}>
-        <small className="d-block text-muted">Line total</small>
-        <span className="h6 bw-price">{formatCurrency(item.price * item.quantity)}</span>
       </div>
     </li>
   );

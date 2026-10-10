@@ -1,8 +1,13 @@
-from pydantic import BaseModel
-from typing import Optional, List, Any
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from datetime import datetime
 
 # --- Stats ---
+class PopularProduct(BaseModel):
+    name: str
+    quantity: int
+
+
 class DashboardStats(BaseModel):
     totalOrders: int = 0
     pendingOrders: int = 0
@@ -12,6 +17,7 @@ class DashboardStats(BaseModel):
     totalProducts: int = 0
     totalRevenue: float = 0
     monthlyRevenue: float = 0
+    popularProducts: List[PopularProduct] = []
 
 # --- Order Management ---
 class OrderItemResponse(BaseModel):
@@ -50,10 +56,13 @@ class ContactResponse(BaseModel):
 class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    price: float
+    # Optional because the catalogue is quote-based: seeded products have no
+    # price, so requiring one made every edit (including a stock adjustment)
+    # fail validation.
+    price: Optional[float] = Field(default=None, ge=0)
     category: str
     image: Optional[str] = None
-    stock: int = 0
+    stock: int = Field(default=0, ge=0)
 
 class ServiceCreate(BaseModel):
     title: str

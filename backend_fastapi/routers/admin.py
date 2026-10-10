@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.orm import Session
-from typing import List
-from datetime import datetime
-import os
-import shutil
 import json
+import os
+import uuid
+from datetime import datetime
+from html import escape
+
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
@@ -13,15 +15,30 @@ from models import (
     Gallery, ProcessStep
 )
 from schemas.admin import (
-    DashboardStats, StatusUpdate, ContactResponse,
+    DashboardStats, StatusUpdate,
     ProductCreate, ServiceCreate, GalleryCreate,
-    TechnologyCreate, ProcessStepCreate, QuoteResponse
+    TechnologyCreate, ProcessStepCreate,
 )
 from schemas.company_info import CompanyInfoUpdate
 from core.security import get_current_admin
-from core.email import send_email
+from core.email import send_email_safely
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
+
+ORDER_STATUSES = ("processing", "confirmed", "shipped", "delivered", "cancelled")
+
+# Uploads are restricted to a short allow-list of raster image types, and the
+# stored extension comes from the *detected* type rather than the client's
+# filename. Serving a user-named .html or .svg from /uploads would be a stored
+# XSS vector.
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "uploads")
 
 # ============================================
 # DASHBOARD STATISTICS
@@ -31,31 +48,42 @@ def get_stats(
     admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    total_orders = db.query(Order).count()
-    pending_orders = db.query(Order).filter(Order.order_status == "processing").count()
-    completed_orders = db.query(Order).filter(Order.order_status == "delivered").count()
-    total_inquiries = db.query(Contact).count()
-    unread_inquiries = db.query(Contact).filter(Contact.is_read == False).count()
-    total_products = db.query(Product).count()
+    # Everything here is computed by the database. The previous version loaded
+    # every order into memory just to add up two totals.
+    def count(column, *criteria) -> int:
+        return db.query(func.count(column)).filter(*criteria).scalar() or 0
 
-    orders = db.query(Order).all()
-    total_revenue = sum(float(o.total_amount) for o in orders)
+    def revenue(*criteria) -> float:
+        total = db.query(func.coalesce(func.sum(Order.total_amount), 0)).filter(*criteria).scalar()
+        return float(total or 0)
 
     now = datetime.now()
-    monthly_revenue = sum(
-        float(o.total_amount) for o in orders
-        if o.created_at and o.created_at.month == now.month and o.created_at.year == now.year
+
+    # Top five products by units ordered, summed by the database. (The
+    # dashboard used to derive this from the orders list, which never includes
+    # line items, so the panel was always empty.)
+    popular = (
+        db.query(Product.name, func.sum(OrderItem.quantity))
+        .join(OrderItem, OrderItem.product_id == Product.id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(OrderItem.quantity).desc())
+        .limit(5)
+        .all()
     )
 
     return {
-        "totalOrders": total_orders,
-        "pendingOrders": pending_orders,
-        "completedOrders": completed_orders,
-        "totalInquiries": total_inquiries,
-        "unreadInquiries": unread_inquiries,
-        "totalProducts": total_products,
-        "totalRevenue": total_revenue,
-        "monthlyRevenue": monthly_revenue
+        "totalOrders": count(Order.id),
+        "pendingOrders": count(Order.id, Order.order_status == "processing"),
+        "completedOrders": count(Order.id, Order.order_status == "delivered"),
+        "totalInquiries": count(Contact.id),
+        "unreadInquiries": count(Contact.id, Contact.is_read.is_(False)),
+        "totalProducts": count(Product.id),
+        "totalRevenue": revenue(),
+        "monthlyRevenue": revenue(
+            func.extract("year", Order.created_at) == now.year,
+            func.extract("month", Order.created_at) == now.month,
+        ),
+        "popularProducts": [{"name": name, "quantity": int(qty or 0)} for name, qty in popular],
     }
 
 # ============================================
@@ -100,11 +128,16 @@ def get_order_detail(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
-    items_list = []
-    for item in items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        items_list.append({
+    # One joined query. The old loop looked the product up separately for
+    # every line item (N+1 queries per order).
+    rows = (
+        db.query(OrderItem, Product)
+        .outerjoin(Product, Product.id == OrderItem.product_id)
+        .filter(OrderItem.order_id == order.id)
+        .all()
+    )
+    items_list = [
+        {
             "id": item.id,
             "orderId": item.order_id,
             "productId": item.product_id,
@@ -113,9 +146,11 @@ def get_order_detail(
             "Product": {
                 "name": product.name if product else "Unknown",
                 "image": product.image if product else None,
-                "category": product.category if product else None
-            }
-        })
+                "category": product.category if product else None,
+            },
+        }
+        for item, product in rows
+    ]
 
     order_dict = {
         "id": order.id,
@@ -139,6 +174,7 @@ def get_order_detail(
 def update_order_status(
     order_id: int,
     status_data: StatusUpdate,
+    background_tasks: BackgroundTasks,
     admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -146,18 +182,18 @@ def update_order_status(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    valid_statuses = ["processing", "confirmed", "shipped", "delivered", "cancelled"]
-    if status_data.status not in valid_statuses:
+    if status_data.status not in ORDER_STATUSES:
         raise HTTPException(status_code=400, detail="Invalid status")
 
     order.order_status = status_data.status
     db.commit()
 
-    # Send email notification (optional)
-    try:
-        send_status_email(order, status_data.status)
-    except Exception as e:
-        print(f"Email notification failed: {e}")
+    # The notification goes out after the response is sent: SMTP can take
+    # seconds, and the admin should not wait on a mail server to see "updated".
+    background_tasks.add_task(
+        notify_status_change,
+        order.order_number, order.customer_name, order.customer_email, status_data.status,
+    )
 
     return {"message": f"Order status updated to {status_data.status}"}
 
@@ -551,41 +587,42 @@ def get_quotes(
 # ============================================
 @router.post("/upload")
 async def upload_image(
-    file: UploadFile = File(...),
-    admin: Admin = Depends(get_current_admin)
+    # The field is named `image` because that is what the frontend has always
+    # sent. The endpoint used to declare `file`, so every upload was rejected
+    # with a 422 before reaching this function.
+    image: UploadFile = File(...),
+    admin: Admin = Depends(get_current_admin),
 ):
-    # Create uploads directory if it doesn't exist
-    upload_dir = "static/uploads"
-    os.makedirs(upload_dir, exist_ok=True)
+    extension = ALLOWED_IMAGE_TYPES.get(image.content_type)
+    if extension is None:
+        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG, WebP or GIF image.")
 
-    # Generate unique filename
-    import time
-    file_extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{int(time.time())}_{file.filename}"
-    file_path = os.path.join(upload_dir, unique_filename)
+    # Read one byte past the limit so an oversized file is detected without
+    # buffering all of it.
+    contents = await image.read(MAX_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Images must be smaller than 5 MB.")
+    if not contents:
+        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
-    # Save file
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{extension}"
+    with open(os.path.join(UPLOAD_DIR, filename), "wb") as buffer:
+        buffer.write(contents)
 
-    # Served under /uploads/ rather than /images/ — the frontend's own public
-    # assets (fallback product photos, hero/banner images) also live under
-    # /images/, and reusing that prefix for backend uploads made assetUrl()
-    # unable to tell the two apart: it rewrote every "/images/..." path to
-    # point at the API host, breaking every image that was actually a
-    # frontend-bundled asset (they don't exist on the API server).
-    image_path = f"/uploads/{unique_filename}"
-    return {"imagePath": image_path}
+    # Served under /uploads/ rather than /images/ because the frontend's own
+    # bundled assets already use /images/, and sharing the prefix made the two
+    # impossible to tell apart (see assetUrl() in the frontend API client).
+    return {"imagePath": f"/uploads/{filename}"}
 
 # ============================================
 # EMAIL HELPER
 # ============================================
-def send_status_email(order, new_status: str):
-    """Notifies a customer that their order status changed.
+def notify_status_change(order_number: str, customer_name: str, customer_email: str, new_status: str) -> None:
+    """Emails a customer that their order status changed.
 
-    Previously duplicated the SMTP connection logic already written in
-    routers/orders.py and routers/quotes.py, with its own load_dotenv() call.
-    Now delegates to core.email.send_email like the others.
+    Takes plain values rather than the ORM object because it runs after the
+    request's database session has closed.
     """
     status_messages = {
         "processing": "Your order is being processed.",
@@ -595,14 +632,14 @@ def send_status_email(order, new_status: str):
         "cancelled": "Your order has been cancelled. Please contact us for more information.",
     }
 
-    send_email(
-        subject=f"Order update — {order.order_number}",
-        to=order.customer_email,
+    send_email_safely(
+        subject=f"Order update — {order_number}",
+        to=customer_email,
         body=f"""
         <h2>Order status update</h2>
-        <p>Dear {order.customer_name},</p>
-        <p>Your order <strong>{order.order_number}</strong> status has been updated to:
-        <strong style="color: #2fa5b6; text-transform: uppercase;">{new_status}</strong></p>
+        <p>Dear {escape(customer_name)},</p>
+        <p>Your order <strong>{escape(order_number)}</strong> status has been updated to:
+        <strong style="color: #2fa5b6; text-transform: uppercase;">{escape(new_status)}</strong></p>
         <p>{status_messages.get(new_status, '')}</p>
         <p>For any inquiries, contact us at 0721 633 223 or bluewellsynergy@gmail.com</p>
         <br/>

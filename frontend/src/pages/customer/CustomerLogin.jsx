@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api';
 import { useCustomer } from '../../context/CustomerContext';
 import { SEO } from '../../components/common';
-import { Button, Field } from '../../components/ui';
+import { Button, Field, Alert } from '../../components/ui';
 import { toastError, toastSuccess } from '../../utils/toast';
 
 export default function CustomerLogin() {
@@ -15,6 +15,7 @@ export default function CustomerLogin() {
 
   // Return the visitor to whatever they were trying to reach.
   const redirectTo = location.state?.from || '/account';
+  const wasRedirected = Boolean(location.state?.from);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -49,7 +50,9 @@ export default function CustomerLogin() {
             <h1 className="h4 mt-3 mb-1">Welcome back</h1>
             <p className="small text-muted mb-0">Sign in to track your orders and repeat them.</p>
           </div>
-
+          {wasRedirected ? (
+            <Alert tone="info">Please sign in or create an account to continue.</Alert>
+          ) : null}
           <form onSubmit={handleSubmit}>
             <Field
               label="Email address"
@@ -76,7 +79,7 @@ export default function CustomerLogin() {
           </form>
 
           <p className="text-center small text-muted mt-4 mb-0">
-            New here? <Link to="/register">Create an account</Link>
+            New here? {' '}<Link to="/register"  state={location.state}>Create an account</Link>
           </p>
         </div>
       </div>

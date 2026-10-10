@@ -33,7 +33,7 @@ export const QUOTE_SERVICE_OPTIONS = [
 
 export const MISSION = {
   title: 'Our mission',
-  lead: 'To design, supply and maintain reliable water treatment systems for homes, businesses and industry — so safe, clean water reaches every level.',
+  lead: 'To design, supply and maintain reliable water treatment systems for homes, businesses and industry  so safe, clean water reaches every level.',
   body: 'We deliver affordable, high-quality solutions tailored to each client, built on modern technology and professional expertise. We work with integrity, transparency and timely service, and we keep improving how we do it.',
 };
 

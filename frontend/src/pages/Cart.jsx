@@ -4,14 +4,13 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { SEO } from '../components/common';
 import { PageBanner } from '../components/layout';
-import { Button, EmptyState, Modal } from '../components/ui';
+import { Button, Card, EmptyState, Modal } from '../components/ui';
 import CartLine from '../components/shop/CartLine';
-import OrderSummary from '../components/shop/OrderSummary';
 import { toastSuccess } from '../utils/toast';
 import { pluralise } from '../utils/format';
 
 export default function Cart() {
-  const { items, count, subtotal, isEmpty, maxQuantity, setQuantity, removeItem, clearCart } = useCart();
+  const { items, count, isEmpty, maxQuantity, setQuantity, removeItem, clearCart } = useCart();
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   const handleRemove = (item) => {
@@ -93,20 +92,13 @@ export default function Cart() {
               </div>
 
               <div className="col-lg-4">
-                <OrderSummary
-                  itemCount={count}
-                  total={subtotal}
-                  rows={[
-                    { label: 'Subtotal', value: subtotal },
-                    { label: 'Delivery', value: 'Calculated at checkout' },
-                    { label: 'VAT (16%)', value: 'Added at checkout' },
-                  ]}
-                >
-                  <p className="small text-muted mb-4">
-                    Delivery and VAT depend on where the order is going, so they are worked out on
-                    the next step.
+                <Card tint className="bw-sticky-aside">
+                  <h2 className="h5 mb-3">Ready to checkout?</h2>
+                  <p className="text-muted mb-0">
+                    You have {count} {pluralise(count, 'item')} in your cart. Delivery options and
+                    your order total are confirmed on the next step.
                   </p>
-                </OrderSummary>
+                </Card>
 
                 <Button to="/checkout" size="lg" block className="mt-4" icon={<FaLock aria-hidden="true" />}>
                   Continue to checkout

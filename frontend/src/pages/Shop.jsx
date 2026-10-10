@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { FaSearch, FaBoxOpen } from 'react-icons/fa';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FaSearch } from 'react-icons/fa';
 import { catalogApi } from '../api';
 import { useApiResource, useDebouncedValue } from '../hooks';
 import { useCart } from '../context/CartContext';
@@ -16,10 +16,13 @@ import { pluralise } from '../utils/format';
 const ALL = 'All';
 const PAGE_SIZE = 12;
 
+// Price is hidden on the catalogue, so "price: low to high / high to low"
+// sorting no longer means anything a shopper can see the effect of.
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Featured' },
   { value: 'name', label: 'Name: A to Z' },
 ];
+
 export default function Shop() {
   const { addItem, setQuantity, quantityOf, maxQuantity } = useCart();
   const { isWishlisted, toggleItem: toggleWishlist } = useWishlist();
@@ -30,17 +33,33 @@ export default function Shop() {
 
   const debouncedSearch = useDebouncedValue(search, 250);
 
-  const { data, loading, error, reload } = useApiResource((options) => catalogApi.listProducts(options), { initialData: null },);
-  const products = data?.length ? data : fallbackProducts;
-  const usingFallback = Boolean(error) || !data?.length;
+  const { data, loading, reload } = useApiResource(
+    (options) => catalogApi.listProducts(options),
+    { initialData: null },
+  );
 
-  const categories = PRODUCT_CATEGORIES;
+  // The live catalogue is what the admin panel edits. The bundled catalogue
+  // (identical to the database seed) keeps the shop usable if the API is down
+  // or the database is still empty, so a failed request is deliberately not
+  // surfaced as an error here.
+  const products = data?.length ? data : fallbackProducts;
+
+  // Fixed display order for the known categories, then any category an admin
+  // has introduced since.
+  const categories = useMemo(() => {
+    const known = new Set(PRODUCT_CATEGORIES);
+    const extra = [...new Set(products.map((product) => product.category))].filter(
+      (name) => name && !known.has(name),
+    );
+    return [...PRODUCT_CATEGORIES, ...extra];
+  }, [products]);
 
   const searchMatched = useMemo(() => {
     const term = debouncedSearch.trim().toLowerCase();
     if (!term) return products;
     return products.filter(
-      (product) => product.name?.toLowerCase().includes(term) || product.description?.toLowerCase().includes(term),
+      (product) =>
+        product.name?.toLowerCase().includes(term) || product.description?.toLowerCase().includes(term),
     );
   }, [products, debouncedSearch]);
 
@@ -54,7 +73,8 @@ export default function Shop() {
   }, [searchMatched]);
 
   const visibleProducts = useMemo(() => {
-    const filtered = category === ALL ? searchMatched : searchMatched.filter((product) => product.category === category);
+    const filtered =
+      category === ALL ? searchMatched : searchMatched.filter((product) => product.category === category);
 
     if (sort === 'name') {
       return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
@@ -67,7 +87,6 @@ export default function Shop() {
 
   useEffect(() => {
     setPage(1);
-
   }, [category, debouncedSearch, sort]);
 
   const handleAdd = (product) => {
@@ -91,9 +110,10 @@ export default function Shop() {
     <>
       <SEO
         title="Shop"
-        description="Browse water purification, disinfection, softening and filtration system with delivery across Kenya"
+        description="Browse water purification, disinfection, softening and filtration systems with delivery across Kenya."
         path="/shop"
       />
+
       <section className="bw-page bw-section">
         <div className="container">
           <div className="bw-catalog">
@@ -136,7 +156,7 @@ export default function Shop() {
               </div>
 
               <AsyncSection
-                loading={loading && !usingFallback}
+                loading={loading}
                 error={null}
                 onRetry={reload}
                 loadingText="Loading products"
@@ -160,7 +180,7 @@ export default function Shop() {
                   <>
                     <div className="row g-3">
                       {pagedProducts.map((product) => (
-                        <div className="col-6 col-lg-3" key={product.id}>
+                        <div className="col-12 col-lg-4 col-sm-6 col-xl-3" key={product.id}>
                           <ProductCard
                             product={product}
                             quantity={quantityOf(product.id)}
@@ -178,19 +198,10 @@ export default function Shop() {
                   </>
                 )}
               </AsyncSection>
-
-              {products.length === 0 ? (
-                <EmptyState
-                  icon={<FaBoxOpen />}
-                  title="The shop is being stocked"
-                  description="Products will appear here shortly. In the meantime we can quote for any system directly."
-                  action={<Button to="/quote">Request a quote</Button>}
-                />
-              ) : null}
             </div>
           </div>
         </div>
       </section>
     </>
-  )
+  );
 }

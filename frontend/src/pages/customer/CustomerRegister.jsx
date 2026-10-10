@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authApi } from '../../api';
 import { useCustomer } from '../../context/CustomerContext';
 import { SEO } from '../../components/common';
-import { Button, Field } from '../../components/ui';
+import { Button, Field , Alert} from '../../components/ui';
 import { email, kenyanPhone, minLength, required, validate } from '../../utils/validation';
 import { toastError, toastSuccess } from '../../utils/toast';
 
@@ -19,6 +19,7 @@ export default function CustomerRegister() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const { login } = useCustomer();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const handleChange = (event) => {
@@ -27,6 +28,8 @@ export default function CustomerRegister() {
     setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
   };
 
+  const redirectTo = location.state?.from || '/account';
+  const wasRedirected = Boolean(location.state?.from);
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -44,7 +47,7 @@ export default function CustomerRegister() {
       const data = await authApi.customerRegister(values);
       login(data.token, data.customer);
       toastSuccess(`Welcome to Bluewell Horizon, ${data.customer.name.split(' ')[0]}`);
-      navigate('/account', { replace: true });
+      navigate(redirectTo, {replace:true});
     } catch (error) {
       toastError(error.message);
       setSubmitting(false);
@@ -64,6 +67,10 @@ export default function CustomerRegister() {
             <h1 className="h4 mt-3 mb-1">Create an account</h1>
             <p className="small text-muted mb-0">Track orders and check out faster next time.</p>
           </div>
+
+          {wasRedirected ? (
+            <Alert tone="info"  >Please sign in or create an account to continue.</Alert>
+          ):null}
 
           <form onSubmit={handleSubmit} noValidate>
             <Field
@@ -114,7 +121,7 @@ export default function CustomerRegister() {
           </form>
 
           <p className="text-center small text-muted mt-4 mb-0">
-            Already registered? <Link to="/login">Sign in</Link>
+            Already registered? {' '}<Link to="/login" state={location.state}>Sign in</Link>
           </p>
         </div>
       </div>

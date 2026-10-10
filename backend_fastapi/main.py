@@ -1,11 +1,13 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import os
 
 from config import settings
 from database import Base, engine
 from models import *  # noqa: F401,F403 — registers every model with Base before create_all
+from routers.admin import UPLOAD_DIR
 from routers import (
     auth, products, services, gallery, technologies, process_steps,
     company_info, orders, quotes, admin, contact,
@@ -29,11 +31,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve uploaded images. Mounted at /uploads rather than /images so it can
-# never collide with the frontend's own bundled /images/ assets — see the
-# note in routers/admin.py's upload handler for why that collision mattered.
-os.makedirs("static/uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="static/uploads"), name="uploads")
+# Serve uploaded images from the same directory the upload endpoint writes to.
+# Mounted at /uploads rather than /images so it can never collide with the
+# frontend's own bundled /images/ assets. The path is absolute, so it no longer
+# depends on which directory the server was started from.
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.include_router(auth.router)
 app.include_router(products.router)
@@ -47,11 +50,10 @@ app.include_router(quotes.router)
 app.include_router(contact.router)
 app.include_router(admin.router)
 
-# Health check route
 @app.get("/")
 def read_root():
+    """Health check."""
     return {"message": "Bluewell Horizon FastAPI Backend is Running! 🚀"}
-
 
 
 if __name__ == "__main__":

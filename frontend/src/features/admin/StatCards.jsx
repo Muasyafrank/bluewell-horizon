@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChartLine, FaClock, FaEnvelope, FaMoneyBillWave, FaShoppingCart } from 'react-icons/fa';
+import { FaClock, FaEnvelope, FaMoneyBillWave, FaShoppingCart } from 'react-icons/fa';
 import { formatCurrency } from '../../utils/format';
 
 const TILES = [
@@ -20,7 +20,6 @@ export default function StatCards({ stats }) {
               aria-hidden="true"
               style={{ backgroundColor: `${tile.tone}1a`, color: tile.tone }}
             >
-              <FaChartLine style={{ display: 'none' }} />
               {tile.icon}
             </span>
             <p className="bw-stat-tile__value">

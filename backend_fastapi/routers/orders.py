@@ -1,27 +1,46 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+import logging
+from collections import Counter
+from datetime import datetime, timezone
+from html import escape
 from typing import List, Optional
-from datetime import datetime
 
-from database import get_db
-from models import Order, OrderItem, Product, Customer
-from schemas.orders import CheckoutRequest, CheckoutResponse, OrderResponse
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from core.email import send_email_safely
 from core.security import get_current_customer, get_current_customer_optional
-from core.email import send_email
+from database import get_db
+from models import Customer, Order, OrderItem, Product
+from schemas.orders import CheckoutRequest, CheckoutResponse, OrderResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["Orders"])
 
 
 @router.post("/orders/checkout", response_model=CheckoutResponse, status_code=status.HTTP_201_CREATED)
 def checkout(
     checkout_data: CheckoutRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     # Checkout works for guests, but if the visitor is signed in the order is
-    # linked to their account so it shows up in their order history. Before
-    # this fix, `Order.customer_id` was never set even though the frontend
-    # sent the bearer token — every order was orphaned.
+    # linked to their account so it shows up in their order history.
     customer: Optional[Customer] = Depends(get_current_customer_optional),
 ):
+    # Resolve every product up front, in one query. An order that references a
+    # product that does not exist is a client error, not a database crash.
+    requested = Counter()
+    for item in checkout_data.items:
+        requested[item.id] += item.quantity
+    products = {
+        p.id: p for p in db.query(Product).filter(Product.id.in_(list(requested))).all()
+    }
+    missing = sorted(set(requested) - set(products))
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some items in your cart are no longer available. Please refresh the shop and try again.",
+        )
+
     try:
         new_order = Order(
             # order_number is set after the insert, once we have a real id to
@@ -55,12 +74,10 @@ def checkout(
         db.add(new_order)
         db.flush()  # assigns new_order.id
 
-        # The order number used to be derived from time.time() truncated to
-        # whole seconds, so two checkouts in the same second collided on the
-        # UNIQUE constraint and the second one failed with a 500. The
-        # database-assigned id is unique by construction, so build the
-        # public-facing number from that instead.
-        new_order.order_number = f"BW-{datetime.utcnow():%Y%m%d}-{new_order.id:05d}"
+        # Built from the database-assigned id, which is unique by construction.
+        # (A timestamp-derived number collided when two orders landed in the
+        # same second.)
+        new_order.order_number = f"BW-{datetime.now(timezone.utc):%Y%m%d}-{new_order.id:05d}"
 
         for item in checkout_data.items:
             db.add(OrderItem(
@@ -70,25 +87,33 @@ def checkout(
                 price=item.price,
             ))
 
-            product = db.query(Product).filter(Product.id == item.id).first()
-            if product:
-                product.stock = max(0, product.stock - item.quantity)
+        for product_id, quantity in requested.items():
+            product = products[product_id]
+            product.stock = max(0, (product.stock or 0) - quantity)
 
         db.commit()
-
-        try:
-            send_order_confirmation_email(new_order, checkout_data.items)
-        except Exception as exc:  # pragma: no cover — email is best-effort
-            print(f"Order confirmation email failed: {exc}")
-
-        return {"message": "Order placed successfully", "orderNumber": new_order.order_number}
-
-    except Exception as exc:
+    except Exception:
         db.rollback()
+        logger.exception("Checkout failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error placing order: {exc}",
+            detail="We couldn't place your order. Please try again.",
         )
+
+    background_tasks.add_task(
+        send_email_safely,
+        subject=f"Order confirmation — {new_order.order_number}",
+        to=checkout_data.customerEmail,
+        body=f"""
+        <h2>Thank you for your order!</h2>
+        <p>Dear {escape(checkout_data.customerName)},</p>
+        <p>Your order <strong>{escape(new_order.order_number)}</strong> has been received and is being processed.</p>
+        <p>We will contact you shortly to confirm delivery and arrange payment.</p>
+        <br/>
+        <p>Best regards,<br/>Bluewell Horizon Team</p>
+        """,
+    )
+    return {"message": "Order placed successfully", "orderNumber": new_order.order_number}
 
 
 @router.get("/customers/orders", response_model=List[OrderResponse])
@@ -143,20 +168,3 @@ def get_customer_orders(
             "items": items,
         })
     return result
-
-
-def send_order_confirmation_email(order: Order, items: list) -> None:
-    send_email(
-        subject=f"Order confirmation — {order.order_number}",
-        to=order.customer_email,
-        body=f"""
-        <h2>Thank you for your order!</h2>
-        <p>Dear {order.customer_name},</p>
-        <p>Your order <strong>{order.order_number}</strong> has been received and is being processed.</p>
-        <p><strong>Total amount:</strong> KES {order.total_amount:,.2f}</p>
-        <p><strong>Payment method:</strong> {order.payment_method}</p>
-        <p>We will contact you shortly with delivery details.</p>
-        <br/>
-        <p>Best regards,<br/>Bluewell Horizon Team</p>
-        """,
-    )

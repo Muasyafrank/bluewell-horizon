@@ -1,59 +1,58 @@
-"""
-Public contact form submissions.
+"""Public contact form submissions."""
+import logging
+from html import escape
 
-This endpoint did not exist before: the frontend posted to /api/contact, the
-admin dashboard fetched and displayed /api/admin/contacts, and the Contact
-model already existed — but nothing ever wrote a row, so every message a
-visitor sent disappeared silently.
-"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from core.email import send_email_safely
 from database import get_db
 from models import Contact
 from schemas.contact import ContactCreate
-from core.email import send_email
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["Contact"])
 
 
 @router.post("/contact", status_code=status.HTTP_201_CREATED)
-def submit_contact(payload: ContactCreate, db: Session = Depends(get_db)):
+def submit_contact(
+    payload: ContactCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     try:
-        new_contact = Contact(
+        db.add(Contact(
             name=payload.name,
             email=payload.email,
             phone=payload.phone,
             service=payload.service,
             message=payload.message,
             is_read=False,
-        )
-        db.add(new_contact)
+        ))
         db.commit()
-
-        try:
-            send_email(
-                subject=f"New enquiry: {payload.service} — {payload.name}",
-                body=f"""
-                <h2>New contact form submission</h2>
-                <p><strong>Name:</strong> {payload.name}</p>
-                <p><strong>Email:</strong> {payload.email}</p>
-                <p><strong>Phone:</strong> {payload.phone}</p>
-                <p><strong>Service:</strong> {payload.service}</p>
-                <p><strong>Message:</strong></p>
-                <p style="padding: 15px; background-color: #ffffff; border-left: 4px solid #2fa5b6;">
-                    {payload.message}
-                </p>
-                """,
-            )
-        except Exception as exc:  # pragma: no cover — email is best-effort
-            print(f"Contact email notification failed: {exc}")
-
-        return {"message": "Message sent successfully"}
-
-    except Exception as exc:
+    except Exception:
         db.rollback()
+        logger.exception("Could not save contact message")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error submitting message: {exc}",
+            detail="We couldn't send your message. Please try again.",
         )
+
+    # Everything below comes from the visitor, so it is escaped before being
+    # placed in an HTML email addressed to the business.
+    background_tasks.add_task(
+        send_email_safely,
+        subject=f"New enquiry: {payload.service} — {payload.name}",
+        body=f"""
+        <h2>New contact form submission</h2>
+        <p><strong>Name:</strong> {escape(payload.name)}</p>
+        <p><strong>Email:</strong> {escape(payload.email)}</p>
+        <p><strong>Phone:</strong> {escape(payload.phone)}</p>
+        <p><strong>Service:</strong> {escape(payload.service)}</p>
+        <p><strong>Message:</strong></p>
+        <p style="padding: 15px; background-color: #ffffff; border-left: 4px solid #2fa5b6;">
+            {escape(payload.message)}
+        </p>
+        """,
+    )
+    return {"message": "Message sent successfully"}

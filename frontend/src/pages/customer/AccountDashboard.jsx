@@ -6,7 +6,7 @@ import { useApiResource } from '../../hooks';
 import { useCustomer } from '../../context/CustomerContext';
 import { SEO, Image } from '../../components/common';
 import { AsyncSection, Button, Card, EmptyState, StatusBadge } from '../../components/ui';
-import { formatCurrency, formatDate, pluralise } from '../../utils/format';
+import { formatDate, pluralise } from '../../utils/format';
 
 export default function AccountDashboard() {
   const { token, user: customer, logout } = useCustomer();
@@ -100,15 +100,11 @@ export default function AccountDashboard() {
                       <th scope="col">Order</th>
                       <th scope="col">Date</th>
                       <th scope="col">Items</th>
-                      <th scope="col">Total</th>
                       <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((order) => {
-                      // The API returns `items`; the old table read
-                      // `order.OrderItems`, an undefined property, and crashed
-                      // the whole page as soon as a customer had one order.
                       const items = order.items || [];
                       return (
                         <tr key={order.id}>
@@ -140,7 +136,6 @@ export default function AccountDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="fw-bold">{formatCurrency(order.totalAmount)}</td>
                           <td>
                             <StatusBadge status={order.orderStatus} />
                           </td>

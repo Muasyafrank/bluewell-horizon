@@ -25,7 +25,7 @@ export const API_BASE_URL = (
  * `{API_BASE_URL}/images/gallery-1.png` — a URL that 404s, since that file
  * only exists in the frontend's own public folder, not on the API server.
  */
-export function assetUrl(path, fallback = '/images/placeholder.png') {
+export function assetUrl(path, fallback = '/images/placeholder.svg') {
   if (!path) return fallback;
   if (/^https?:\/\//i.test(path)) return path;
   if (path.startsWith('/uploads/') || path.startsWith('/static/')) {

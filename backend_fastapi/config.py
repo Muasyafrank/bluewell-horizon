@@ -7,10 +7,14 @@ routers/orders.py, routers/quotes.py all did this independently), so there was
 no single place to see what configuration the app needed or to validate it.
 This module loads the .env file once and exposes typed, validated settings.
 """
+import logging
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 def _require(name: str) -> str:
@@ -46,3 +50,9 @@ class Settings:
 
 
 settings = Settings()
+
+if len(settings.secret_key) < 32:
+    logger.warning(
+        "SECRET_KEY is shorter than 32 characters; anyone who can guess it can forge "
+        "login tokens. Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )

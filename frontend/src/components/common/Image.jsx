@@ -13,12 +13,14 @@ import { assetUrl } from '../../api';
 export default function Image({
   src,
   alt,
-  fallback = '/images/placeholder.png',
+  fallback = '/images/placeholder.svg',
   className = '',
   ...rest
 }) {
-  const [failed, setFailed] = useState(false);
-  const resolved = failed ? fallback : assetUrl(src, fallback);
+  // Remember *which* source failed, so a corrected `src` is tried again
+  // instead of staying stuck on the fallback.
+  const [failedSrc, setFailedSrc] = useState(null);
+  const resolved = failedSrc === src ? fallback : assetUrl(src, fallback);
 
   return (
     <img
@@ -27,7 +29,7 @@ export default function Image({
       loading="lazy"
       decoding="async"
       className={className}
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
       {...rest}
     />
   );

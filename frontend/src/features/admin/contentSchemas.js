@@ -25,7 +25,7 @@ export const CONTENT_SCHEMAS = {
     fields: [
       { name: 'name', label: 'Name', required: true, width: 12 },
       { name: 'image', label: 'Image', type: 'image', width: 12 },
-      { name: 'price', label: 'Price (KES)', type: 'number', min: 0, required: true, width: 4 },
+      { name: 'price', label: 'Price (KES)', type: 'number', min: 0, width: 4, hint: 'Optional — prices are not shown on the shop.' },
       { name: 'stock', label: 'Stock', type: 'number', min: 0, required: true, width: 4 },
       { name: 'category', label: 'Category', required: true, width: 4 },
       { name: 'description', label: 'Description', as: 'textarea', rows: 3, required: true, width: 12 },
@@ -130,10 +130,7 @@ export const CONTENT_SCHEMAS = {
 
 /** Blank form values for a content type. */
 export function emptyValues(type) {
-  return CONTENT_SCHEMAS[type].fields.reduce((values, field) => {
-    values[field.name] = field.type === 'number' ? '' : '';
-    return values;
-  }, {});
+  return Object.fromEntries(CONTENT_SCHEMAS[type].fields.map((field) => [field.name, '']));
 }
 
 /** Converts a stored record into form values. */

@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
+import './styles/toast.css';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
@@ -32,7 +33,7 @@ const AccountDashboard = lazy(() => import('./pages/customer/AccountDashboard'))
 
 const AdminLogin = lazy(() => import('./features/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./features/admin/AdminDashboard'));
-const Wishlist = lazy(()=> import('./pages/Wishlist'))
+const Wishlist = lazy(() => import('./pages/Wishlist'))
 
 function PageFallback() {
   return <Loader text="Loading" fullPage />;
@@ -46,54 +47,100 @@ export default function App() {
           <CustomerProvider>
             <CartProvider>
               <WishlistProvider>
-              <BrowserRouter>
-                <StructuredData />
-                <Suspense fallback={<PageFallback />}>
-                  <Routes>
-                    <Route path="/" element={<Layout />}>
-                      <Route index element={<Home />} />
-                      <Route path="about" element={<About />} />
-                      <Route path="services" element={<Solutions />} />
-                      {/* Old marketing links pointed at /technologies before the
+                <BrowserRouter>
+                  <StructuredData />
+                  <Suspense fallback={<PageFallback />}>
+                    <Routes>
+                      <Route path="/" element={<Layout />}>
+                        <Route index element={<Home />} />
+                        <Route path="about" element={<About />} />
+                        <Route path="services" element={<Solutions />} />
+                        {/* Old marketing links pointed at /technologies before the
                           services and technologies pages merged. */}
-                      <Route path="technologies" element={<Navigate to="/services" replace />} />
-                      <Route path="gallery" element={<Gallery />} />
-                      <Route path="shop" element={<Shop />} />
-                      <Route path="wishlist" element={<Wishlist />} />                      
-                      <Route path="cart" element={<Cart />} />
-                      <Route path="checkout" element={<Checkout />} />
-                      <Route path="order-success" element={<OrderSuccess />} />
-                      <Route path="contact" element={<Contact />} />
-                      <Route path="quote" element={<Quote />} />
+                        <Route path="technologies" element={<Navigate to="/services" replace />} />
+                        <Route path="gallery" element={<Gallery />} />
 
-                      <Route path="login" element={<CustomerLogin />} />
-                      <Route path="register" element={<CustomerRegister />} />
+
+                        <Route
+                          path="shop"
+                          element={
+                            <RequireAuth audience="customer">
+                              <Shop />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="wishlist"
+                          element={
+                            <RequireAuth audience="customer">
+                              <Wishlist />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="cart"
+                          element={
+                            <RequireAuth audience="customer">
+                              <Cart />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="checkout"
+                          element={
+                            <RequireAuth audience="customer">
+                              <Checkout />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="quote"
+                          element={
+                            <RequireAuth audience="customer">
+                              <Quote />
+                            </RequireAuth>
+                          }
+                        />
+
+                        <Route path="order-success" element={<OrderSuccess />} />
+                       
+                        <Route
+                          path="contact"
+                          element={
+                            <RequireAuth audience="customer">
+                              <Contact />
+                            </RequireAuth>
+                          }
+                        />
+
+                        <Route path="login" element={<CustomerLogin />} />
+                        <Route path="register" element={<CustomerRegister />} />
+                        <Route
+                          path="account"
+                          element={
+                            <RequireAuth audience="customer">
+                              <AccountDashboard />
+                            </RequireAuth>
+                          }
+                        />
+
+                        <Route path="*" element={<NotFound />} />
+                      </Route>
+
+                      <Route path="/admin/login" element={<AdminLogin />} />
                       <Route
-                        path="account"
+                        path="/admin/dashboard"
                         element={
-                          <RequireAuth audience="customer">
-                            <AccountDashboard />
+                          <RequireAuth audience="admin">
+                            <AdminDashboard />
                           </RequireAuth>
                         }
                       />
+                    </Routes>
+                  </Suspense>
 
-                      <Route path="*" element={<NotFound />} />
-                    </Route>
-
-                    <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route
-                      path="/admin/dashboard"
-                      element={
-                        <RequireAuth audience="admin">
-                          <AdminDashboard />
-                        </RequireAuth>
-                      }
-                    />
-                  </Routes>
-                </Suspense>
-
-                <ToastContainer position="top-right" autoClose={4000} newestOnTop closeOnClick pauseOnHover theme="colored" />
-              </BrowserRouter>
+                  <ToastContainer position="top-right" autoClose={4000} newestOnTop closeOnClick pauseOnHover theme="colored" />
+                </BrowserRouter>
               </WishlistProvider>
             </CartProvider>
           </CustomerProvider>

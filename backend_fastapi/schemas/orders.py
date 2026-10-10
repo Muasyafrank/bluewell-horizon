@@ -1,40 +1,47 @@
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
-from schemas.base import CamelModel
+from typing import List, Optional
 
-class OrderItemBase(BaseModel):
+from pydantic import BaseModel, EmailStr, Field
+
+from schemas.base import CamelModel, TrimmedModel
+
+
+class OrderItemBase(TrimmedModel):
     id: int
-    quantity: int
-    price: float
-    name: Optional[str] = None
-    image: Optional[str] = None
-    category: Optional[str] = None
+    # A quantity below 1 used to be accepted, and a negative one *added* stock
+    # back to the product when the order was processed.
+    quantity: int = Field(ge=1, le=1000)
+    price: float = Field(ge=0)
+    name: Optional[str] = Field(default=None, max_length=200)
+    image: Optional[str] = Field(default=None, max_length=500)
+    category: Optional[str] = Field(default=None, max_length=200)
 
-class CheckoutRequest(BaseModel):
-    customerName: str
-    customerEmail: str
-    customerPhone: str
-    companyName: Optional[str] = None
-    kraPin: Optional[str] = None
-    county: str
-    constituency: Optional[str] = None
-    estate: str
-    streetAddress: str
-    buildingName: Optional[str] = None
-    apartmentNumber: Optional[str] = None
-    poBox: Optional[str] = None
-    postalCode: Optional[str] = None
-    deliveryMethod: str = "standard"
-    paymentMethod: str
-    mpesaPhone: Optional[str] = None
-    mpesaReference: Optional[str] = None
-    notes: Optional[str] = None
-    items: List[OrderItemBase]
-    subtotal: float
-    deliveryFee: float = 0
-    vatAmount: float = 0
-    totalAmount: float
+
+class CheckoutRequest(TrimmedModel):
+    customerName: str = Field(min_length=1, max_length=120)
+    customerEmail: EmailStr
+    customerPhone: str = Field(min_length=5, max_length=30)
+    companyName: Optional[str] = Field(default=None, max_length=160)
+    kraPin: Optional[str] = Field(default=None, max_length=30)
+    county: str = Field(min_length=1, max_length=80)
+    constituency: Optional[str] = Field(default=None, max_length=80)
+    estate: str = Field(min_length=1, max_length=120)
+    streetAddress: str = Field(min_length=1, max_length=200)
+    buildingName: Optional[str] = Field(default=None, max_length=200)
+    apartmentNumber: Optional[str] = Field(default=None, max_length=50)
+    poBox: Optional[str] = Field(default=None, max_length=50)
+    postalCode: Optional[str] = Field(default=None, max_length=20)
+    deliveryMethod: str = Field(default="standard", max_length=40)
+    paymentMethod: str = Field(min_length=1, max_length=40)
+    mpesaPhone: Optional[str] = Field(default=None, max_length=30)
+    mpesaReference: Optional[str] = Field(default=None, max_length=60)
+    notes: Optional[str] = Field(default=None, max_length=1000)
+    items: List[OrderItemBase] = Field(min_length=1, max_length=100)
+    subtotal: float = Field(ge=0)
+    deliveryFee: float = Field(default=0, ge=0)
+    vatAmount: float = Field(default=0, ge=0)
+    totalAmount: float = Field(ge=0)
+
 
 class OrderItemDetail(BaseModel):
     id: int

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { adminApi, catalogApi } from '../../api';
 
 /**
@@ -24,10 +24,14 @@ export function useAdminData(token) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasLoaded = useRef(false);
 
   const load = useCallback(
     async (signal) => {
-      setLoading(true);
+      // Only the first load shows the full-panel spinner. A reload after an
+      // edit refreshes in the background, so the tab you are on does not
+      // disappear and reappear every time you save something.
+      if (!hasLoaded.current) setLoading(true);
       setError(null);
       try {
         const [
@@ -58,6 +62,7 @@ export function useAdminData(token) {
           quotes: quotes || [],
           companyInfo: companyInfo || {},
         });
+        hasLoaded.current = true;
       } catch (err) {
         if (err.name !== 'AbortError') setError(err);
       } finally {

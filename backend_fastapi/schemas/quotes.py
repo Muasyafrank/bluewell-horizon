@@ -1,15 +1,19 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
-from schemas.base import CamelModel
+from typing import Optional
 
-class QuoteRequest(BaseModel):
-    name: str
-    email: str
-    phone: str
-    companyName: str
-    serviceType: str
-    projectDetails: str
+from pydantic import EmailStr, Field
+
+from schemas.base import CamelModel, TrimmedModel
+
+
+class QuoteRequest(TrimmedModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    phone: str = Field(min_length=5, max_length=30)
+    companyName: str = Field(min_length=1, max_length=160)
+    serviceType: str = Field(min_length=1, max_length=120)
+    projectDetails: str = Field(min_length=1, max_length=5000)
+
 
 class QuoteResponse(CamelModel):
     id: int

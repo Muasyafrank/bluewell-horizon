@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Admin, Customer
 from schemas.auth import AdminLogin, CustomerRegister, CustomerLogin, TokenResponse, CustomerResponse, AdminResponse
-from core.security import get_password_hash, verify_password, create_access_token
+from core.security import create_access_token, get_password_hash, verify_password
+from core.tokens import ROLE_ADMIN, ROLE_CUSTOMER
 
 router = APIRouter(prefix="/api", tags=["Authentication"])
 
@@ -18,7 +19,7 @@ def admin_login(login_data: AdminLogin, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
     
-    token = create_access_token(data={"sub": str(admin.id)})
+    token = create_access_token(admin.id, ROLE_ADMIN)
     return {
         "token": token,
         "admin": AdminResponse.model_validate(admin)
@@ -47,7 +48,7 @@ def customer_register(register_data: CustomerRegister, db: Session = Depends(get
     db.commit()
     db.refresh(new_customer)
     
-    token = create_access_token(data={"sub": str(new_customer.id)})
+    token = create_access_token(new_customer.id, ROLE_CUSTOMER)
     return {
         "token": token,
         "customer": CustomerResponse.model_validate(new_customer)
@@ -62,7 +63,7 @@ def customer_login(login_data: CustomerLogin, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
     
-    token = create_access_token(data={"sub": str(customer.id)})
+    token = create_access_token(customer.id, ROLE_CUSTOMER)
     return {
         "token": token,
         "customer": CustomerResponse.model_validate(customer)
