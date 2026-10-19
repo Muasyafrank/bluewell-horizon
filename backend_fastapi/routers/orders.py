@@ -1,6 +1,7 @@
 import logging
 from collections import Counter
 from datetime import datetime, timezone
+from decimal import Decimal
 from html import escape
 from typing import List, Optional
 
@@ -10,11 +11,15 @@ from sqlalchemy.orm import Session
 from core.email import send_email_safely
 from core.security import get_current_customer, get_current_customer_optional
 from database import get_db
-from models import Customer, Order, OrderItem, Product
+from models import Customer, Order, OrderItem, Product, StockMovement
 from schemas.orders import CheckoutRequest, CheckoutResponse, OrderResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["Orders"])
+
+
+def unit_price(product: Product) -> Decimal:
+    return Decimal(str(product.price or 0))
 
 
 @router.post("/orders/checkout", response_model=CheckoutResponse, status_code=status.HTTP_201_CREATED)
@@ -41,6 +46,11 @@ def checkout(
             detail="Some items in your cart are no longer available. Please refresh the shop and try again.",
         )
 
+    # Prices come from the admin's catalogue (a product with no price counts as
+    # 0), never from the browser. Customers don't see them; the admin works
+    # from them and sets the final figures in the quotation.
+    subtotal = sum((unit_price(products[item.id]) * item.quantity for item in checkout_data.items), Decimal("0"))
+
     try:
         new_order = Order(
             # order_number is set after the insert, once we have a real id to
@@ -61,13 +71,14 @@ def checkout(
             po_box=checkout_data.poBox,
             postal_code=checkout_data.postalCode,
             delivery_method=checkout_data.deliveryMethod,
-            delivery_fee=checkout_data.deliveryFee,
+            # Delivery and VAT are decided when the admin prepares the quotation.
+            delivery_fee=0,
             payment_method=checkout_data.paymentMethod,
             mpesa_phone=checkout_data.mpesaPhone,
             mpesa_reference=checkout_data.mpesaReference,
-            subtotal=checkout_data.subtotal,
-            vat_amount=checkout_data.vatAmount,
-            total_amount=checkout_data.totalAmount,
+            subtotal=subtotal,
+            vat_amount=0,
+            total_amount=subtotal,
             notes=checkout_data.notes,
             order_status="processing",
         )
@@ -84,12 +95,17 @@ def checkout(
                 order_id=new_order.id,
                 product_id=item.id,
                 quantity=item.quantity,
-                price=item.price,
+                price=unit_price(products[item.id]),
             ))
 
         for product_id, quantity in requested.items():
             product = products[product_id]
-            product.stock = max(0, (product.stock or 0) - quantity)
+            taken = min(product.stock or 0, quantity)
+            product.stock = (product.stock or 0) - taken
+            if taken:
+                db.add(StockMovement(product_id=product.id, change=-taken, balance_after=product.stock,
+                                     reason="sale", reference=new_order.order_number, note="Order placed",
+                                     created_by="website"))
 
         db.commit()
     except Exception:
@@ -143,7 +159,6 @@ def get_customer_orders(
                 "id": item.id,
                 "productId": item.product_id,
                 "quantity": item.quantity,
-                "price": float(item.price),
                 "name": product.name if product else "Product",
                 "image": product.image if product else None,
                 "category": product.category if product else None,
@@ -159,10 +174,6 @@ def get_customer_orders(
             "streetAddress": order.street_address,
             "deliveryMethod": order.delivery_method,
             "paymentMethod": order.payment_method,
-            "subtotal": float(order.subtotal),
-            "deliveryFee": float(order.delivery_fee),
-            "vatAmount": float(order.vat_amount),
-            "totalAmount": float(order.total_amount),
             "orderStatus": order.order_status,
             "createdAt": order.created_at,
             "items": items,

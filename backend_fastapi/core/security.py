@@ -14,6 +14,7 @@ __all__ = [
     "create_access_token",
     "get_current_admin",
     "get_current_customer",
+    "get_current_staff",
     "get_current_customer_optional",
     "get_password_hash",
     "verify_password",
@@ -45,14 +46,25 @@ def _unauthorized() -> HTTPException:
     )
 
 
-def get_current_admin(
+def get_current_staff(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ) -> Admin:
+    """Any active staff login (admin, sales, accounts or stores)."""
     admin_id = decode_subject(credentials.credentials, ROLE_ADMIN)
     admin = db.get(Admin, admin_id) if admin_id is not None else None
-    if admin is None:
+    # Deactivated staff keep their old tokens until they expire, so check here.
+    if admin is None or not admin.active:
         raise _unauthorized()
+    return admin
+
+
+def get_current_admin(admin: Admin = Depends(get_current_staff)) -> Admin:
+    """Administrators only. The website's admin dashboard and quotation tools use
+    this, so sales, accounts and stores staff cannot reach them; they get only the
+    modules their role lists in `core.permissions`."""
+    if admin.effective_role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Administrator access is required.")
     return admin
 
 

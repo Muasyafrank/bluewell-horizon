@@ -1,0 +1,103 @@
+/* About page: the story section and photo collage. Shared page sections live in marketing.css. */
+
+/* --- Story --------------------------------------------------------------- */
+
+.bw-about-story { padding-top: clamp(4.5rem, 9vw, 7rem); }
+
+.bw-about-story__title {
+  margin: 0 0 var(--bw-space-4);
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  line-height: 1.15;
+  color: var(--bw-navy);
+}
+
+.bw-collage {
+  position: relative;
+  padding: 0 0 clamp(2rem, 6vw, 3.5rem) clamp(0rem, 3vw, 1.5rem);
+}
+.bw-collage img {
+  display: block;
+  height: auto;
+  object-fit: cover;
+}
+.bw-collage__main {
+  width: 84%;
+  overflow: hidden;
+  border-radius: var(--bw-radius-xl);
+  background: var(--bw-surface-tint);
+  box-shadow: var(--bw-shadow-lg);
+}
+/* The photo is a studio shot on white; multiplying it over the tint panel
+   turns the white into the panel colour instead of a stark box. */
+.bw-collage__main img { mix-blend-mode: multiply; width: 100%; }
+.bw-collage__inset {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 52%;
+  border: 6px solid var(--bw-white);
+  border-radius: var(--bw-radius-lg);
+  box-shadow: var(--bw-shadow-lg);
+}
+.bw-collage__ripple {
+  position: absolute;
+  z-index: -1;
+  top: -28px;
+  left: -10px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 14px, rgba(47, 165, 182, 0.22) 15px 16px);
+}
+.bw-collage__badge {
+  position: absolute;
+  left: 0;
+  bottom: clamp(0.5rem, 3vw, 1.5rem);
+  display: flex;
+  align-items: center;
+  gap: var(--bw-space-3);
+  padding: var(--bw-space-3) var(--bw-space-4);
+  background: var(--bw-white);
+  border-radius: var(--bw-radius-lg);
+  box-shadow: var(--bw-shadow-lg);
+}
+.bw-collage__badge strong,
+.bw-collage__badge small { display: block; line-height: 1.25; }
+.bw-collage__badge strong { color: var(--bw-navy); }
+.bw-collage__badge small { font-size: 0.8rem; color: var(--bw-text-muted); }
+.bw-collage__badge-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--bw-teal), var(--bw-teal-dark));
+}
+
+.bw-capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--bw-space-4) var(--bw-space-5);
+  margin: 0;
+  padding: var(--bw-space-5) 0 0;
+  list-style: none;
+  border-top: 1px solid var(--bw-border);
+}
+.bw-capabilities li { display: flex; gap: var(--bw-space-3); }
+.bw-capabilities strong { display: block; color: var(--bw-navy); }
+.bw-capabilities small { display: block; font-size: 0.88rem; line-height: 1.5; color: var(--bw-text-muted); }
+.bw-capabilities__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--bw-radius-md);
+  color: var(--bw-teal-dark);
+  background: var(--bw-surface-tint);
+}
+
+@media (max-width: 575.98px) {
+  .bw-collage { padding-left: 0; }
+}

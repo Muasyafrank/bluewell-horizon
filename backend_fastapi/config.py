@@ -41,6 +41,19 @@ class Settings:
     email_user: str | None = os.getenv("EMAIL_USER") or None
     email_pass: str | None = os.getenv("EMAIL_PASS") or None
 
+    # Payment details printed on quotations. Each method appears on a quotation
+    # only when its details are filled in (cash on delivery needs none). See
+    # .env.example.
+    mpesa_paybill_number: str | None = os.getenv("PAYMENT_MPESA_PAYBILL_NUMBER") or None
+    mpesa_paybill_account: str = os.getenv("PAYMENT_MPESA_PAYBILL_ACCOUNT") or "Your order number"
+    mpesa_till_number: str | None = os.getenv("PAYMENT_MPESA_TILL_NUMBER") or None
+    mpesa_till_name: str | None = os.getenv("PAYMENT_MPESA_TILL_NAME") or None
+    bank_name: str | None = os.getenv("PAYMENT_BANK_NAME") or None
+    bank_account_name: str | None = os.getenv("PAYMENT_BANK_ACCOUNT_NAME") or None
+    bank_account_number: str | None = os.getenv("PAYMENT_BANK_ACCOUNT_NUMBER") or None
+    bank_branch: str | None = os.getenv("PAYMENT_BANK_BRANCH") or None
+    cash_on_delivery_enabled: bool = os.getenv("PAYMENT_COD_ENABLED", "true").lower() not in ("0", "false", "no")
+
     # CORS: comma-separated list of allowed origins
     cors_origins: list[str] = [
         origin.strip()

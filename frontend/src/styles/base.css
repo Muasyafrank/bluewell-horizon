@@ -14,6 +14,12 @@ html {
   scroll-padding-top: var(--bw-navbar-height);
 }
 
+/* `clip` (unlike `hidden`) really stops phones panning sideways when a Bootstrap
+   row's gutter pokes a few pixels past the container. */
+html {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   font-family: var(--bw-font-sans);
@@ -90,4 +96,23 @@ h1, h2, h3, h4, h5, h6 {
 
 .bw-skip-link:focus {
   top: var(--bw-space-4);
+}
+
+/* Scroll reveal (see hooks/useReveal.js). Elements only get `--hidden` from
+   script, and only when the browser can reveal them again. */
+.bw-reveal {
+  transition: opacity 600ms ease, transform 600ms ease;
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+.bw-reveal--hidden {
+  opacity: 0;
+  transform: translateY(24px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-reveal,
+  .bw-reveal--hidden {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
 }

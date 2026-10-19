@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCheckCircle, FaClock, FaTimesCircle, FaTruck } from 'react-icons/fa';
+import { FaCheckCircle, FaClock, FaFileInvoice, FaTimesCircle, FaTruck } from 'react-icons/fa';
 import Badge from './Badge';
 import { titleCase } from '../../utils/format';
 
@@ -10,6 +10,7 @@ import { titleCase } from '../../utils/format';
  */
 const STATUSES = {
   processing: { tone: 'warning', icon: <FaClock /> },
+  quoted: { tone: 'info', icon: <FaFileInvoice /> },
   confirmed: { tone: 'info', icon: <FaCheckCircle /> },
   shipped: { tone: 'info', icon: <FaTruck /> },
   delivered: { tone: 'success', icon: <FaCheckCircle /> },

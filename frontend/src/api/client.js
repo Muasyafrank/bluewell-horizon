@@ -137,5 +137,34 @@ export const http = {
   get: (path, options) => request(path, { ...options, method: 'GET' }),
   post: (path, body, options) => request(path, { ...options, method: 'POST', body }),
   put: (path, body, options) => request(path, { ...options, method: 'PUT', body }),
+  patch: (path, body, options) => request(path, { ...options, method: 'PATCH', body }),
   del: (path, options) => request(path, { ...options, method: 'DELETE' }),
 };
+
+/**
+ * Downloads an authenticated file (a link can't carry the bearer token) and
+ * hands it to the browser as a save-as.
+ */
+export async function downloadFile(path, { token, filename = 'download' } = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch {
+    throw new ApiError('Cannot reach the server. Check your connection and try again.', { status: 0 });
+  }
+  if (!response.ok) {
+    let payload = null;
+    try { payload = await response.json(); } catch { /* not JSON */ }
+    throw new ApiError(extractMessage(payload, response.status), { status: response.status, data: payload });
+  }
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}

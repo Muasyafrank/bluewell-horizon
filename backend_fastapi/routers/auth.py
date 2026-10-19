@@ -18,7 +18,12 @@ def admin_login(login_data: AdminLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
-    
+    if not admin.active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account has been deactivated. Ask an administrator."
+        )
+
     token = create_access_token(admin.id, ROLE_ADMIN)
     return {
         "token": token,

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { FaPaperPlane } from 'react-icons/fa';
 import { enquiriesApi } from '../api';
 import { SEO } from '../components/common';
-import { PageBanner } from '../components/layout';
 import { Alert, Button, Card, Field } from '../components/ui';
+import PageHero from '../components/marketing/PageHero';
 import { CONTACT_DETAILS, QUOTE_SERVICE_OPTIONS } from '../data/company';
 import { email, kenyanPhone, required, validate } from '../utils/validation';
 import { toastError, toastSuccess } from '../utils/toast';
@@ -77,10 +77,12 @@ export default function Quote() {
         path="/quote"
       />
 
-      <PageBanner
+      <PageHero
+        size="sm"
         eyebrow="Request a quote"
         title="Tell us about the project"
         lead="For bottling lines, desalination and industrial systems, send us the requirements and we will put together a costed proposal."
+        image="/images/gallery-3.png"
       />
 
       <section className="bw-section">
@@ -94,8 +96,8 @@ export default function Quote() {
                 </Alert>
               ) : null}
 
-              <Card tint>
-                <h2 className="h5 mb-4">Project details</h2>
+              <Card className="bw-form-card">
+                <h2 className="bw-form-card__title">Project details</h2>
 
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="row g-3">
@@ -200,39 +202,24 @@ export default function Quote() {
             </div>
 
             <div className="col-lg-4">
-              <div className="bw-card bw-sticky-aside" style={{ backgroundColor: 'var(--bw-navy)', borderColor: 'var(--bw-navy)' }}>
-                <h2 className="h5 mb-4" style={{ color: 'var(--bw-white)' }}>
-                  What you get
-                </h2>
-                <ul className="list-unstyled mb-4">
+              <aside className="bw-summary-panel bw-sticky-aside">
+                <h2 className="bw-summary-panel__title mb-4">What you get</h2>
+                <ul className="bw-summary-panel__reasons">
                   {REASONS.map((reason) => (
-                    <li className="mb-4" key={reason.title}>
-                      <strong className="d-block mb-1" style={{ color: 'var(--bw-white)' }}>
-                        {reason.title}
-                      </strong>
-                      <span className="small" style={{ color: 'var(--bw-text-on-dark)' }}>
-                        {reason.description}
-                      </span>
+                    <li key={reason.title}>
+                      <strong>{reason.title}</strong>
+                      <span>{reason.description}</span>
                     </li>
                   ))}
                 </ul>
 
-                <hr style={{ borderColor: 'rgba(255,255,255,0.12)' }} />
-
-                <p className="small mb-2" style={{ color: 'var(--bw-text-on-dark-muted)' }}>
-                  Prefer to talk it through?
-                </p>
+                <p className="bw-summary-panel__note">Prefer to talk it through?</p>
                 {CONTACT_DETAILS.phones.map((phone) => (
-                  <a
-                    key={phone}
-                    href={`tel:${phone.replace(/\s/g, '')}`}
-                    className="d-block fw-bold"
-                    style={{ color: 'var(--bw-teal-light)' }}
-                  >
+                  <a key={phone} href={`tel:${phone.replace(/\s/g, '')}`} className="bw-summary-panel__phone">
                     {phone}
                   </a>
                 ))}
-              </div>
+              </aside>
             </div>
           </div>
         </div>

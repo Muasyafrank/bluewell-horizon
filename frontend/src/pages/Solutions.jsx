@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
+import { FaTint } from 'react-icons/fa';
 import { catalogApi } from '../api';
 import { useApiResource } from '../hooks';
-import { SEO } from '../components/common';
-import { PageBanner } from '../components/layout';
+import { Reveal, SEO } from '../components/common';
 import { AsyncSection, Button, EmptyState, SectionHeading } from '../components/ui';
+import CtaBand from '../components/marketing/CtaBand';
+import PageHero from '../components/marketing/PageHero';
+import { ProcessList } from '../components/marketing/ProcessTimeline';
 import ServiceCard from '../components/services/ServiceCard';
 import ServiceModal from '../components/services/ServiceModal';
 import TechnologyCard from '../components/services/TechnologyCard';
-import ProcessSteps from '../components/services/ProcessSteps';
-import { FaTint } from 'react-icons/fa';
 
 export default function Solutions() {
   const [selectedService, setSelectedService] = useState(null);
@@ -26,15 +27,23 @@ export default function Solutions() {
         path="/services"
       />
 
-      <PageBanner
+      <PageHero
         eyebrow="Services and technologies"
-        title="Treatment systems, engineered end to end"
+        title={<>Treatment systems, engineered <em>end to end</em></>}
         lead="We pair proven treatment technology with our own engineering so each system matches the water it has to handle."
+        image="/images/gallery-10.png"
+        actions={
+          <>
+            <Button to="/contact" variant="onDark" size="lg">Book a free consultation</Button>
+            <Button to="/quote" variant="ghostOnDark" size="lg">Request a quote</Button>
+          </>
+        }
       />
 
       <section className="bw-section">
         <div className="container">
           <SectionHeading
+            eyebrow="What we do"
             title="Core services"
             lead="Select any service to see what it covers, where it fits and what you get."
             className="mb-5"
@@ -56,10 +65,10 @@ export default function Solutions() {
             }
           >
             <div className="row g-4">
-              {(services.data || []).map((service) => (
-                <div className="col-md-6 col-lg-4" key={service.id}>
+              {(services.data || []).map((service, index) => (
+                <Reveal className="col-md-6 col-lg-4" index={index % 3} key={service.id}>
                   <ServiceCard service={service} onSelect={setSelectedService} />
-                </div>
+                </Reveal>
               ))}
             </div>
           </AsyncSection>
@@ -69,6 +78,7 @@ export default function Solutions() {
       <section className="bw-section bw-section--tint">
         <div className="container">
           <SectionHeading
+            eyebrow="Technology"
             title="The technologies behind them"
             lead="Each system combines several of these, chosen against your water test results."
             className="mb-5"
@@ -81,10 +91,10 @@ export default function Solutions() {
             loadingText="Loading technologies"
           >
             <div className="row g-4">
-              {(technologies.data || []).map((technology) => (
-                <div className="col-md-6 col-lg-4" key={technology.id}>
+              {(technologies.data || []).map((technology, index) => (
+                <Reveal className="col-md-6 col-lg-4" index={index % 3} key={technology.id}>
                   <TechnologyCard technology={technology} />
-                </div>
+                </Reveal>
               ))}
             </div>
           </AsyncSection>
@@ -93,24 +103,27 @@ export default function Solutions() {
 
       <section className="bw-section">
         <div className="container">
-          <SectionHeading align="center" title="How a project runs" className="mb-5" />
+          <SectionHeading align="center" eyebrow="Process" title="How a project runs" className="mb-5" />
 
           <AsyncSection
             loading={processSteps.loading}
             error={processSteps.error}
             onRetry={processSteps.reload}
             loadingText="Loading process"
+            isEmpty={!processSteps.data?.length}
+            empty={<p className="text-center text-muted mb-0">Our project process will appear here soon.</p>}
           >
-            <ProcessSteps steps={processSteps.data || []} />
+            <ProcessList steps={processSteps.data || []} />
           </AsyncSection>
-
-          <div className="text-center mt-5">
-            <Button to="/contact" size="lg">
-              Book a free consultation
-            </Button>
-          </div>
         </div>
       </section>
+
+      <CtaBand
+        title="Not sure which system fits your water?"
+        lead="Tell us what the water is doing and we will arrange a free test, then recommend what it would take to fix it."
+        primary={{ to: '/contact', label: 'Book a free consultation' }}
+        secondary={{ to: '/quote', label: 'Request a quote' }}
+      />
 
       <ServiceModal
         service={selectedService}

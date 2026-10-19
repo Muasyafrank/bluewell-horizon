@@ -6,7 +6,7 @@ export default function TechnologyCard({ technology }) {
   const Icon = resolveIcon(technology.icon);
 
   return (
-    <Card>
+    <Card className="bw-tech">
       <div className="d-flex align-items-center gap-3 mb-3">
         <span className="bw-feature-icon bw-feature-icon--soft mb-0" aria-hidden="true">
           <Icon />

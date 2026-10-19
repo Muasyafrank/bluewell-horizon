@@ -4,6 +4,7 @@ import { authApi } from '../../api';
 import { useCustomer } from '../../context/CustomerContext';
 import { SEO } from '../../components/common';
 import { Button, Field, Alert } from '../../components/ui';
+import AuthLayout from '../../components/marketing/AuthLayout';
 import { toastError, toastSuccess } from '../../utils/toast';
 
 export default function CustomerLogin() {
@@ -41,48 +42,41 @@ export default function CustomerLogin() {
     <>
       <SEO title="Sign in" path="/login" noIndex />
 
-      <div className="bw-auth-shell">
-        <div className="bw-auth-card">
-          <div className="text-center mb-4">
-            <Link to="/" aria-label="Bluewell Horizon, home">
-              <img src="/logo.png" alt="" width="56" height="56" style={{ borderRadius: '50%' }} />
-            </Link>
-            <h1 className="h4 mt-3 mb-1">Welcome back</h1>
-            <p className="small text-muted mb-0">Sign in to track your orders and repeat them.</p>
-          </div>
-          {wasRedirected ? (
-            <Alert tone="info">Please sign in or create an account to continue.</Alert>
-          ) : null}
-          <form onSubmit={handleSubmit}>
-            <Field
-              label="Email address"
-              name="email"
-              type="email"
-              value={values.email}
-              onChange={handleChange}
-              autoComplete="email"
-              required
-            />
-            <Field
-              label="Password"
-              name="password"
-              type="password"
-              value={values.password}
-              onChange={handleChange}
-              autoComplete="current-password"
-              required
-            />
+      <AuthLayout
+        title="Welcome back"
+        subtitle="Sign in to track your orders and repeat them."
+        notice={wasRedirected ? <Alert tone="info">Please sign in or create an account to continue.</Alert> : null}
+        footer={
+          <>
+            New here? <Link to="/register" state={location.state}>Create an account</Link>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit}>
+          <Field
+            label="Email address"
+            name="email"
+            type="email"
+            value={values.email}
+            onChange={handleChange}
+            autoComplete="email"
+            required
+          />
+          <Field
+            label="Password"
+            name="password"
+            type="password"
+            value={values.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            required
+          />
 
-            <Button type="submit" block size="lg" loading={submitting} loadingText="Signing in">
-              Sign in
-            </Button>
-          </form>
-
-          <p className="text-center small text-muted mt-4 mb-0">
-            New here? {' '}<Link to="/register"  state={location.state}>Create an account</Link>
-          </p>
-        </div>
-      </div>
+          <Button type="submit" block size="lg" loading={submitting} loadingText="Signing in">
+            Sign in
+          </Button>
+        </form>
+      </AuthLayout>
     </>
   );
 }

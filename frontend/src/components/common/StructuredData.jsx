@@ -38,7 +38,6 @@ const StructuredData = () => {
       "https://www.facebook.com/bluewellhorizon",
       "https://www.linkedin.com/company/bluewell-horizon"
     ],
-    "priceRange": "$$",
     "description": "Bluewell Horizon Limited is a trusted provider of innovative water treatment technologies in Kenya, specializing in water purification, desalination, bottling plants, and technical support.",
     "areaServed": {
       "@type": "Country",

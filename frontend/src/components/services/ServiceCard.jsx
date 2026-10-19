@@ -14,7 +14,7 @@ export default function ServiceCard({ service, onSelect }) {
       type={interactive ? 'button' : undefined}
       interactive={interactive}
       onClick={interactive ? () => onSelect(service) : undefined}
-      className="d-flex flex-column"
+      className="d-flex flex-column bw-service-card"
     >
       <span className="bw-feature-icon" aria-hidden="true">
         <Icon />
@@ -22,7 +22,7 @@ export default function ServiceCard({ service, onSelect }) {
       <h3 className="bw-card__title">{service.title}</h3>
       <p className="bw-card__text flex-grow-1">{service.shortDesc}</p>
       {interactive ? (
-        <span className="d-inline-flex align-items-center gap-2 mt-4 fw-semibold" style={{ color: 'var(--bw-teal-dark)' }}>
+        <span className="bw-service-card__link">
           Read more <FaArrowRight size={13} aria-hidden="true" />
         </span>
       ) : null}

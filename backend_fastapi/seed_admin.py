@@ -38,7 +38,8 @@ def main() -> None:
         if db.query(Admin).filter(Admin.email == email).first():
             print(f"An admin with email {email} already exists; nothing changed.")
             return
-        db.add(Admin(email=email, password=get_password_hash(password)))
+        db.add(Admin(email=email, name="Administrator", role="admin", is_active=True,
+                      password=get_password_hash(password)))
         db.commit()
         print(f"Admin {email} created.")
     finally:

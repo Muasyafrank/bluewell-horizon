@@ -11,7 +11,8 @@ class OrderItemBase(TrimmedModel):
     # A quantity below 1 used to be accepted, and a negative one *added* stock
     # back to the product when the order was processed.
     quantity: int = Field(ge=1, le=1000)
-    price: float = Field(ge=0)
+    # Accepted for older clients but ignored: prices are set by the admin.
+    price: float = Field(default=0, ge=0)
     name: Optional[str] = Field(default=None, max_length=200)
     image: Optional[str] = Field(default=None, max_length=500)
     category: Optional[str] = Field(default=None, max_length=200)
@@ -37,17 +38,18 @@ class CheckoutRequest(TrimmedModel):
     mpesaReference: Optional[str] = Field(default=None, max_length=60)
     notes: Optional[str] = Field(default=None, max_length=1000)
     items: List[OrderItemBase] = Field(min_length=1, max_length=100)
-    subtotal: float = Field(ge=0)
+    # Accepted for older clients but ignored: the server works out any figures
+    # from the admin's prices, and the quotation sets the agreed ones.
+    subtotal: float = Field(default=0, ge=0)
     deliveryFee: float = Field(default=0, ge=0)
     vatAmount: float = Field(default=0, ge=0)
-    totalAmount: float = Field(ge=0)
+    totalAmount: float = Field(default=0, ge=0)
 
 
 class OrderItemDetail(BaseModel):
     id: int
     productId: int
     quantity: int
-    price: float
     name: str
     image: Optional[str] = None
     category: Optional[str] = None
@@ -64,10 +66,6 @@ class OrderResponse(CamelModel):
     street_address: str
     delivery_method: str
     payment_method: str
-    subtotal: float
-    delivery_fee: float
-    vat_amount: float
-    total_amount: float
     order_status: str
     created_at: Optional[datetime] = None
     # Populated by the router from each order's line items; not on the ORM

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { FaEdit, FaEye, FaTrash, FaUser, FaShoppingCart } from 'react-icons/fa';
+import { FaEdit, FaEye, FaFileInvoice, FaTrash, FaUser, FaShoppingCart } from 'react-icons/fa';
 import { adminApi } from '../../../api';
 import { Button, Field, Modal, StatusBadge, ORDER_STATUSES } from '../../../components/ui';
 import { Image } from '../../../components/common';
+import QuotationModal from './QuotationModal';
 import { formatCurrency, formatDateTime } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
 
@@ -17,6 +18,7 @@ export default function OrdersPanel({ orders, token, onChanged }) {
   const [statusTarget, setStatusTarget] = useState(null);
   const [status, setStatus] = useState('');
   const [deleting, setDeleting] = useState(null);
+  const [quoting, setQuoting] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // The order list has no line items; the detail endpoint does. The previous
@@ -81,7 +83,7 @@ export default function OrdersPanel({ orders, token, onChanged }) {
                 <th scope="col">Amount</th>
                 <th scope="col">Payment</th>
                 <th scope="col">Status</th>
-                <th scope="col" style={{ width: '180px' }}>Actions</th>
+                <th scope="col" style={{ width: '220px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -93,7 +95,9 @@ export default function OrdersPanel({ orders, token, onChanged }) {
                     <span className="d-block text-muted small">{order.customerEmail}</span>
                   </td>
                   <td className="small">{formatDateTime(order.createdAt)}</td>
-                  <td className="fw-bold bw-price">{formatCurrency(order.totalAmount)}</td>
+                  <td className="fw-bold bw-price">
+                    {order.totalAmount > 0 ? formatCurrency(order.totalAmount) : <span className="text-muted fw-normal">Awaiting quotation</span>}
+                  </td>
                   <td>
                     <span className="text-uppercase small">{order.paymentMethod}</span>
                   </td>
@@ -110,6 +114,15 @@ export default function OrdersPanel({ orders, token, onChanged }) {
                         disabled={loadingDetail}
                       >
                         <FaEye />
+                      </button>
+                      <button
+                        type="button"
+                        className="bw-icon-btn"
+                        aria-label={`Quotation for ${order.orderNumber}`}
+                        title="Prepare and send a quotation"
+                        onClick={() => setQuoting(order)}
+                      >
+                        <FaFileInvoice />
                       </button>
                       <button type="button" className="bw-icon-btn" aria-label="Update status" onClick={() => openStatus(order)}>
                         <FaEdit />
@@ -131,7 +144,28 @@ export default function OrdersPanel({ orders, token, onChanged }) {
         </div>
       )}
 
-      <Modal open={Boolean(viewing)} onClose={() => setViewing(null)} title={viewing ? `Order ${viewing.orderNumber}` : ''} size="xl">
+      <Modal
+        open={Boolean(viewing)}
+        onClose={() => setViewing(null)}
+        title={viewing ? `Order ${viewing.orderNumber}` : ''}
+        size="xl"
+        footer={
+          viewing ? (
+            <>
+              <Button variant="outline" onClick={() => setViewing(null)}>Close</Button>
+              <Button
+                icon={<FaFileInvoice aria-hidden="true" />}
+                onClick={() => {
+                  setQuoting(viewing);
+                  setViewing(null);
+                }}
+              >
+                Prepare quotation
+              </Button>
+            </>
+          ) : null
+        }
+      >
         {viewing ? (
           <div className="row g-4">
             <div className="col-md-6">
@@ -154,7 +188,10 @@ export default function OrdersPanel({ orders, token, onChanged }) {
                 </h3>
                 <p className="mb-1"><strong>Payment:</strong> <span className="text-uppercase">{viewing.paymentMethod}</span></p>
                 <p className="mb-1"><strong>Status:</strong> <StatusBadge status={viewing.orderStatus} /></p>
-                <p className="mb-0"><strong>Total:</strong> <span className="bw-price">{formatCurrency(viewing.totalAmount)}</span></p>
+                <p className="mb-0">
+                  <strong>Total:</strong>{' '}
+                  {viewing.totalAmount > 0 ? <span className="bw-price">{formatCurrency(viewing.totalAmount)}</span> : <span className="text-muted">Awaiting quotation</span>}
+                </p>
               </div>
             </div>
             <div className="col-12">
@@ -174,8 +211,8 @@ export default function OrdersPanel({ orders, token, onChanged }) {
                           </div>
                         </td>
                         <td>{item.quantity}</td>
-                        <td>{formatCurrency(item.price)}</td>
-                        <td className="fw-bold">{formatCurrency(item.price * item.quantity)}</td>
+                        <td>{item.price > 0 ? formatCurrency(item.price) : <span className="text-muted">Not set</span>}</td>
+                        <td className="fw-bold">{item.price > 0 ? formatCurrency(item.price * item.quantity) : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -190,6 +227,10 @@ export default function OrdersPanel({ orders, token, onChanged }) {
           </div>
         ) : null}
       </Modal>
+
+      {quoting ? (
+        <QuotationModal order={quoting} token={token} onClose={() => setQuoting(null)} onChanged={onChanged} />
+      ) : null}
 
       <Modal
         open={Boolean(statusTarget)}

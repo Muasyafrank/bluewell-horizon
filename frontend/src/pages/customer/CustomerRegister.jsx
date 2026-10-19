@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authApi } from '../../api';
 import { useCustomer } from '../../context/CustomerContext';
 import { SEO } from '../../components/common';
-import { Button, Field , Alert} from '../../components/ui';
+import { Button, Field, Alert } from '../../components/ui';
+import AuthLayout from '../../components/marketing/AuthLayout';
 import { email, kenyanPhone, minLength, required, validate } from '../../utils/validation';
 import { toastError, toastSuccess } from '../../utils/toast';
 
@@ -58,73 +59,64 @@ export default function CustomerRegister() {
     <>
       <SEO title="Create an account" path="/register" noIndex />
 
-      <div className="bw-auth-shell">
-        <div className="bw-auth-card">
-          <div className="text-center mb-4">
-            <Link to="/" aria-label="Bluewell Horizon, home">
-              <img src="/logo.png" alt="" width="56" height="56" style={{ borderRadius: '50%' }} />
-            </Link>
-            <h1 className="h4 mt-3 mb-1">Create an account</h1>
-            <p className="small text-muted mb-0">Track orders and check out faster next time.</p>
-          </div>
+      <AuthLayout
+        title="Create an account"
+        subtitle="Track orders and check out faster next time."
+        notice={wasRedirected ? <Alert tone="info">Please sign in or create an account to continue.</Alert> : null}
+        footer={
+          <>
+            Already registered? <Link to="/login" state={location.state}>Sign in</Link>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} noValidate>
+          <Field
+            label="Full name"
+            name="name"
+            value={values.name}
+            onChange={handleChange}
+            error={errors.name}
+            autoComplete="name"
+            required
+          />
+          <Field
+            label="Email address"
+            name="email"
+            type="email"
+            value={values.email}
+            onChange={handleChange}
+            error={errors.email}
+            autoComplete="email"
+            required
+          />
+          <Field
+            label="Phone number"
+            name="phone"
+            type="tel"
+            value={values.phone}
+            onChange={handleChange}
+            error={errors.phone}
+            autoComplete="tel"
+            placeholder="0712 345 678"
+            required
+          />
+          <Field
+            label="Password"
+            name="password"
+            type="password"
+            value={values.password}
+            onChange={handleChange}
+            error={errors.password}
+            hint="At least 8 characters."
+            autoComplete="new-password"
+            required
+          />
 
-          {wasRedirected ? (
-            <Alert tone="info"  >Please sign in or create an account to continue.</Alert>
-          ):null}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <Field
-              label="Full name"
-              name="name"
-              value={values.name}
-              onChange={handleChange}
-              error={errors.name}
-              autoComplete="name"
-              required
-            />
-            <Field
-              label="Email address"
-              name="email"
-              type="email"
-              value={values.email}
-              onChange={handleChange}
-              error={errors.email}
-              autoComplete="email"
-              required
-            />
-            <Field
-              label="Phone number"
-              name="phone"
-              type="tel"
-              value={values.phone}
-              onChange={handleChange}
-              error={errors.phone}
-              autoComplete="tel"
-              placeholder="0712 345 678"
-              required
-            />
-            <Field
-              label="Password"
-              name="password"
-              type="password"
-              value={values.password}
-              onChange={handleChange}
-              error={errors.password}
-              hint="At least 8 characters."
-              autoComplete="new-password"
-              required
-            />
-
-            <Button type="submit" block size="lg" loading={submitting} loadingText="Creating account">
-              Create account
-            </Button>
-          </form>
-
-          <p className="text-center small text-muted mt-4 mb-0">
-            Already registered? {' '}<Link to="/login" state={location.state}>Sign in</Link>
-          </p>
-        </div>
-      </div>
+          <Button type="submit" block size="lg" loading={submitting} loadingText="Creating account">
+            Create account
+          </Button>
+        </form>
+      </AuthLayout>
     </>
   );
 }

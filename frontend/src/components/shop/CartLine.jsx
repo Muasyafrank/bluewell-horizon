@@ -7,7 +7,7 @@ import Image from '../common/Image';
 /** One line of the cart: image, name, quantity stepper, remove. No pricing. */
 export default function CartLine({ item, maxQuantity, onSetQuantity, onRemove }) {
   return (
-    <li className="bw-card d-flex flex-wrap align-items-center gap-4">
+    <li className="bw-card bw-cart-line d-flex flex-wrap align-items-center gap-4">
       <Image src={item.image} alt={item.name} className="bw-thumb" />
 
       <div className="flex-grow-1" style={{ minWidth: '12rem' }}>

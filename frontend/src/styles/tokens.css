@@ -11,6 +11,9 @@
   --bw-navy-surface: #091c2e;
   --bw-teal: #2fa5b6;
   --bw-teal-dark: #1f8494;
+  /* Teal for small text on light backgrounds: #1f8494 is 4.39:1 on white, just
+     under the 4.5:1 WCAG AA minimum; this is 5.15:1 on white and 4.7:1+ on the tints. */
+  --bw-teal-text: #1a7887;
   --bw-teal-light: #7dd3e3;
   --bw-cyan-pale: #90deeb;
   --bw-blue: #0072a3;
@@ -22,11 +25,11 @@
   --bw-border: #e2e8f0;
   --bw-border-tint: #d1e8eb;
   --bw-text: #1a2b3c;
-  --bw-text-muted: #64748b;
-  --bw-text-soft: #718096;
+  --bw-text-muted: #5b6b80;   /* was #64748b: 4.45:1 on the tint panels, now 5.09 */
+  --bw-text-soft: #5f6f86;    /* was #718096: 4.02:1 on white, now 5.12 (4.78 on the tint) */
   --bw-text-on-dark: #cbd5e0;
   --bw-text-on-dark-muted: #95b5c4;
-  --bw-text-on-dark-faint: #5a7a8c;
+  --bw-text-on-dark-faint: #6f8fa1; /* was #5a7a8c: 4.16:1 on the footer, now 5.54 */
 
   /* Status colours */
   --bw-success: #15803d;

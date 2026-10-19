@@ -25,7 +25,7 @@ export const CONTENT_SCHEMAS = {
     fields: [
       { name: 'name', label: 'Name', required: true, width: 12 },
       { name: 'image', label: 'Image', type: 'image', width: 12 },
-      { name: 'price', label: 'Price (KES)', type: 'number', min: 0, width: 4, hint: 'Optional — prices are not shown on the shop.' },
+      { name: 'price', label: 'Price (KES)', type: 'number', min: 0, width: 4, hint: 'Internal. Never shown to customers; it pre-fills the unit price when you prepare a quotation.' },
       { name: 'stock', label: 'Stock', type: 'number', min: 0, required: true, width: 4 },
       { name: 'category', label: 'Category', required: true, width: 4 },
       { name: 'description', label: 'Description', as: 'textarea', rows: 3, required: true, width: 12 },

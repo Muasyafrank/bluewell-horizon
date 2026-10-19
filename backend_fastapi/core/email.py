@@ -24,7 +24,11 @@ def _single_line(value: str) -> str:
     return " ".join(value.splitlines())
 
 
-def send_email(subject: str, body: str, to: str | None = None) -> None:
+def email_is_configured() -> bool:
+    return bool(settings.email_user and settings.email_pass)
+
+
+def send_email(subject: str, body: str, to: str | None = None, cc: str | None = None) -> None:
     """Sends an HTML email via Gmail SMTP. Does nothing if EMAIL_USER / EMAIL_PASS
     are not configured. Raises on SMTP errors; prefer `send_email_safely`."""
     if not settings.email_user or not settings.email_pass:
@@ -34,6 +38,8 @@ def send_email(subject: str, body: str, to: str | None = None) -> None:
     message = MIMEMultipart()
     message["From"] = settings.email_user
     message["To"] = _single_line(to or settings.email_user)
+    if cc:
+        message["Cc"] = _single_line(cc)
     message["Subject"] = _single_line(subject)
     message.attach(MIMEText(body, "html"))
 

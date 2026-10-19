@@ -34,6 +34,7 @@ const AccountDashboard = lazy(() => import('./pages/customer/AccountDashboard'))
 const AdminLogin = lazy(() => import('./features/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./features/admin/AdminDashboard'));
 const Wishlist = lazy(() => import('./pages/Wishlist'))
+const StaffApp = lazy(() => import('./features/staff/StaffApp'));
 
 function PageFallback() {
   return <Loader text="Loading" fullPage />;
@@ -136,6 +137,7 @@ export default function App() {
                           </RequireAuth>
                         }
                       />
+                      <Route path="/staff/*" element={<StaffApp />} />
                     </Routes>
                   </Suspense>
 

@@ -1,22 +1,27 @@
 import React from 'react';
 import { FaArrowRight } from 'react-icons/fa';
 import { catalogApi } from '../api';
-import { useApiResource } from '../hooks';
-import { SEO, Image } from '../components/common';
-import { AsyncSection, Button, Card, SectionHeading } from '../components/ui';
-import Hero from '../components/marketing/Hero';
-import ValueGrid from '../components/marketing/ValueGrid';
+import { useApiResource, useGalleryItems } from '../hooks';
+import { Reveal, SEO } from '../components/common';
+import { AsyncSection, Button, SectionHeading } from '../components/ui';
+import CtaBand from '../components/marketing/CtaBand';
+import MissionVision from '../components/marketing/MissionVision';
+import PageHero from '../components/marketing/PageHero';
+import ProjectTile from '../components/marketing/ProjectTile';
+import StatStrip from '../components/marketing/StatStrip';
+import ValuesSection from '../components/marketing/ValuesSection';
 import ServiceCard from '../components/services/ServiceCard';
-import { CORE_VALUES, MISSION, VISION } from '../data/company';
+import { COMPANY_STATS } from '../data/company';
+
+/** The sectors named in the About copy ("homes, businesses, schools, hospitals and industrial plants"). */
+const SECTORS = ['Homes', 'Businesses', 'Schools', 'Hospitals', 'Industry'];
 
 export default function Home() {
-  // Both requests used to fire with no error handling at all; a stopped API
-  // produced an unhandled rejection and two permanently empty sections.
   const services = useApiResource((options) => catalogApi.listServices(options), { initialData: [] });
-  const gallery = useApiResource((options) => catalogApi.listGallery(options), { initialData: [] });
+  const gallery = useGalleryItems();
 
   const featuredServices = (services.data || []).slice(0, 6);
-  const featuredGallery = (gallery.data || []).slice(0, 6);
+  const featuredGallery = gallery.items.slice(0, 6);
 
   return (
     <>
@@ -26,37 +31,28 @@ export default function Home() {
         keywords="water treatment Kenya, water purification Nairobi, reverse osmosis Kenya, water bottling plant, desalination Kenya"
       />
 
-      <Hero />
-
-      <section className="bw-section bw-section--tint">
-        <div className="container">
-          <div className="row g-4 g-lg-5 mb-5">
-            <div className="col-lg-6">
-              <Card className="h-100">
-                <h2 className="h4 mb-3">{MISSION.title}</h2>
-                <p className="bw-lead mb-4">{MISSION.lead}</p>
-                <p className="bw-prose mb-0">{MISSION.body}</p>
-              </Card>
-            </div>
-            <div className="col-lg-6">
-              <Card className="h-100">
-                <h2 className="h4 mb-3">{VISION.title}</h2>
-                <p className="bw-lead mb-4">{VISION.lead}</p>
-                <p className="bw-prose mb-0">{VISION.body}</p>
-              </Card>
-            </div>
-          </div>
-
-          <SectionHeading
-            align="center"
-            title="What guides our work"
-            lead="Eight commitments that shape how we specify, install and support every system."
-            className="mb-5"
-          />
-
-          <ValueGrid items={CORE_VALUES} />
-        </div>
-      </section>
+      <PageHero
+        size="lg"
+        eyebrow="Bluewell Horizon Solutions Limited"
+        title={<>Pure water, engineered with <em>precision</em></>}
+        lead="We design, supply, install and maintain water treatment systems for homes, businesses, institutions and industry across Kenya."
+        image="/images/gallery-3.png"
+        actions={
+          <>
+            <Button to="/contact" variant="onDark" size="lg">Book a free consultation</Button>
+            <Button to="/services" variant="ghostOnDark" size="lg" iconAfter={<FaArrowRight aria-hidden="true" />}>
+              See what we do
+            </Button>
+          </>
+        }
+        overlap={<StatStrip stats={COMPANY_STATS} />}
+      >
+        <ul className="bw-chips" aria-label="Sectors we serve">
+          {SECTORS.map((sector) => (
+            <li key={sector}>{sector}</li>
+          ))}
+        </ul>
+      </PageHero>
 
       <section className="bw-section">
         <div className="container">
@@ -74,10 +70,10 @@ export default function Home() {
             loadingText="Loading services"
           >
             <div className="row g-4">
-              {featuredServices.map((service) => (
-                <div className="col-md-6 col-lg-4" key={service.id}>
+              {featuredServices.map((service, index) => (
+                <Reveal className="col-md-6 col-lg-4" index={index % 3} key={service.id}>
                   <ServiceCard service={service} />
-                </div>
+                </Reveal>
               ))}
             </div>
 
@@ -101,41 +97,35 @@ export default function Home() {
             className="mb-5"
           />
 
-          <AsyncSection
-            loading={gallery.loading}
-            error={gallery.error}
-            onRetry={gallery.reload}
-            loadingText="Loading projects"
-          >
+          <AsyncSection loading={gallery.loading} error={null} onRetry={gallery.reload} loadingText="Loading projects">
             <div className="row g-4">
-              {featuredGallery.map((item) => (
-                <div className="col-md-6 col-lg-4" key={item.id}>
-                  <Card flush>
-                    <Image src={item.image} alt={item.title} className="bw-card__media" />
-                    <div className="bw-card__body">
-                      <p className="small text-muted mb-1">{item.category}</p>
-                      <h3 className="bw-card__title mb-0">{item.title}</h3>
-                    </div>
-                  </Card>
-                </div>
+              {featuredGallery.map((item, index) => (
+                <Reveal className="col-md-6 col-lg-4" index={index % 3} key={item.id}>
+                  <ProjectTile item={item} />
+                </Reveal>
               ))}
             </div>
+
+            {featuredGallery.length > 0 ? (
+              <div className="text-center mt-5">
+                <Button to="/gallery" variant="outline" iconAfter={<FaArrowRight aria-hidden="true" />}>
+                  View the full gallery
+                </Button>
+              </div>
+            ) : null}
           </AsyncSection>
         </div>
       </section>
 
-      <section className="bw-band bw-section" style={{ backgroundImage: "url('/images/gallery-2.png')" }}>
-        <div className="container text-center">
-          <h2 className="display-6 fw-bold mb-3">Not sure what your water needs?</h2>
-          <p className="bw-lead mx-auto mb-5">
-            Book a free water test and system design consultation. We will tell you what is in your
-            supply and what it would take to fix it.
-          </p>
-          <Button to="/contact" variant="onDark" size="lg">
-            Book a free consultation
-          </Button>
-        </div>
-      </section>
+      <MissionVision />
+      <ValuesSection lead="Eight commitments that shape how we specify, install and support every system." />
+
+      <CtaBand
+        title="Not sure what your water needs?"
+        lead="Book a free water test and system design consultation. We will tell you what is in your supply and what it would take to fix it."
+        primary={{ to: '/contact', label: 'Book a free consultation' }}
+        secondary={{ to: '/quote', label: 'Request a quote' }}
+      />
     </>
   );
 }

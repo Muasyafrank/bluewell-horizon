@@ -1,0 +1,412 @@
+/* ==========================================================================
+   Customer account page
+   Built on the existing design tokens; nothing here introduces a new colour.
+   ========================================================================== */
+
+.bw-account {
+  /* The navbar floats over the page, so clear it with room to spare. */
+  padding-top: calc(var(--bw-navbar-height) + 2.5rem);
+}
+
+@keyframes bw-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.bw-account-hero,
+.bw-account-stats,
+.bw-account-actions,
+.bw-account-orders {
+  animation: bw-fade-up 480ms ease both;
+}
+.bw-account-stats   { animation-delay: 80ms; }
+.bw-account-actions { animation-delay: 140ms; }
+.bw-account-orders  { animation-delay: 200ms; }
+
+/* --- Profile banner ------------------------------------------------------ */
+
+.bw-account-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bw-space-5);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  margin-bottom: var(--bw-space-5);
+  border-radius: var(--bw-radius-xl);
+  color: var(--bw-text-on-dark);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(47, 165, 182, 0.35), transparent 55%),
+    linear-gradient(135deg, var(--bw-navy-deep) 0%, var(--bw-navy) 60%, #0e4a63 100%);
+  box-shadow: var(--bw-shadow-lg);
+}
+
+/* Ripples, echoing the water theme. Decorative only. */
+.bw-account-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: -90px;
+  bottom: -90px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 26px,
+    rgba(125, 211, 227, 0.1) 27px 28px
+  );
+}
+
+.bw-account-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--bw-space-5);
+  min-width: 0;
+}
+
+.bw-account-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(135deg, var(--bw-teal), var(--bw-blue));
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.14), var(--bw-shadow-teal);
+}
+
+.bw-account-hero__eyebrow {
+  margin: 0 0 0.15rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bw-teal-light);
+}
+
+.bw-account-hero__title {
+  margin: 0;
+  font-family: var(--bw-font-display);
+  font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+  line-height: 1.1;
+  color: #fff;
+}
+
+.bw-account-hero__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+  color: var(--bw-text-on-dark-muted);
+}
+.bw-account-hero__contact li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.bw-account-hero__contact svg { color: var(--bw-teal-light); }
+
+.bw-account-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bw-space-3);
+}
+
+/* --- Stat tiles ---------------------------------------------------------- */
+
+.bw-account-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--bw-space-4);
+  margin-bottom: var(--bw-space-4);
+}
+
+.bw-account-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'icon value' 'icon label';
+  column-gap: var(--bw-space-4);
+  align-items: center;
+  padding: var(--bw-space-4) var(--bw-space-5);
+  background: var(--bw-white);
+  border: 1px solid var(--bw-border);
+  border-radius: var(--bw-radius-lg);
+  color: var(--bw-text);
+  text-decoration: none;
+  transition: transform var(--bw-transition), box-shadow var(--bw-transition), border-color var(--bw-transition);
+}
+.bw-account-stat__icon {
+  grid-area: icon;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--bw-radius-md);
+  font-size: 1.15rem;
+  color: var(--bw-teal-dark);
+  background: var(--bw-surface-tint);
+}
+.bw-account-stat__value {
+  grid-area: value;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--bw-navy);
+}
+.bw-account-stat__label {
+  grid-area: label;
+  font-size: 0.85rem;
+  color: var(--bw-text-muted);
+}
+
+/* --- Quick links --------------------------------------------------------- */
+
+.bw-account-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--bw-space-4);
+  margin-bottom: var(--bw-space-7);
+}
+
+.bw-account-action {
+  display: flex;
+  align-items: center;
+  gap: var(--bw-space-4);
+  padding: var(--bw-space-4) var(--bw-space-5);
+  background: var(--bw-white);
+  border: 1px solid var(--bw-border);
+  border-radius: var(--bw-radius-lg);
+  color: var(--bw-text);
+  text-decoration: none;
+  transition: transform var(--bw-transition), box-shadow var(--bw-transition), border-color var(--bw-transition);
+}
+.bw-account-action__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--bw-teal), var(--bw-teal-dark));
+}
+.bw-account-action__text { display: grid; min-width: 0; line-height: 1.3; }
+.bw-account-action__text strong { color: var(--bw-navy); }
+.bw-account-action__text small { color: var(--bw-text-muted); }
+.bw-account-action__arrow {
+  margin-left: auto;
+  flex: none;
+  color: var(--bw-teal);
+  transition: transform var(--bw-transition);
+}
+
+.bw-account-stat--link:hover,
+.bw-account-action:hover {
+  transform: translateY(-3px);
+  border-color: var(--bw-teal-light);
+  box-shadow: var(--bw-shadow-md);
+}
+.bw-account-action:hover .bw-account-action__arrow { transform: translateX(4px); }
+
+.bw-account-stat--link:focus-visible,
+.bw-account-action:focus-visible,
+.bw-order__details summary:focus-visible {
+  outline: 3px solid var(--bw-teal);
+  outline-offset: 3px;
+}
+
+/* --- Orders -------------------------------------------------------------- */
+
+.bw-account-orders__title {
+  margin: 0 0 var(--bw-space-5);
+  font-size: 1.4rem;
+  color: var(--bw-navy);
+}
+
+.bw-account-orders__list {
+  display: grid;
+  gap: var(--bw-space-4);
+}
+
+.bw-order {
+  padding: var(--bw-space-5);
+  background: var(--bw-white);
+  border: 1px solid var(--bw-border);
+  border-left: 4px solid var(--bw-teal);
+  border-radius: var(--bw-radius-lg);
+  transition: box-shadow var(--bw-transition);
+}
+.bw-order:hover { box-shadow: var(--bw-shadow-md); }
+
+.bw-order__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bw-space-3);
+}
+.bw-order__number {
+  margin: 0;
+  font-family: var(--bw-font-mono);
+  font-size: 1.05rem;
+  color: var(--bw-teal-text);
+}
+.bw-order__meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  color: var(--bw-text-muted);
+}
+
+.bw-order__thumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--bw-space-2);
+  margin-top: var(--bw-space-4);
+}
+.bw-order__thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  padding: 4px;
+  background: var(--bw-surface);
+  border: 1px solid var(--bw-border);
+  border-radius: var(--bw-radius-md);
+}
+.bw-order__more {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  font-weight: 600;
+  color: var(--bw-teal-dark);
+  background: var(--bw-surface-tint);
+  border: 1px dashed var(--bw-border-tint);
+  border-radius: var(--bw-radius-md);
+}
+
+/* Progress tracker */
+.bw-progress {
+  display: flex;
+  margin: var(--bw-space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-progress__step {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+/* Connector between this dot and the previous one. */
+.bw-progress__step + .bw-progress__step::before {
+  content: '';
+  position: absolute;
+  top: 13px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bw-border);
+}
+.bw-progress__step--done::before,
+.bw-progress__step--current::before { background: var(--bw-teal) !important; }
+
+.bw-progress__dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bw-text-muted);
+  background: var(--bw-white);
+  border: 2px solid var(--bw-border);
+}
+.bw-progress__step--done .bw-progress__dot {
+  color: #fff;
+  background: var(--bw-teal);
+  border-color: var(--bw-teal);
+}
+.bw-progress__step--current .bw-progress__dot {
+  color: var(--bw-teal-text);
+  border-color: var(--bw-teal);
+  box-shadow: 0 0 0 4px rgba(47, 165, 182, 0.2);
+}
+.bw-progress__label {
+  font-size: 0.78rem;
+  color: var(--bw-text-muted);
+}
+.bw-progress__step--current .bw-progress__label {
+  font-weight: 700;
+  color: var(--bw-navy);
+}
+
+.bw-order__cancelled {
+  margin: var(--bw-space-4) 0 0;
+  padding: var(--bw-space-3) var(--bw-space-4);
+  font-size: 0.9rem;
+  color: var(--bw-danger);
+  background: var(--bw-danger-bg);
+  border-radius: var(--bw-radius-md);
+}
+
+/* Expandable item list */
+.bw-order__details {
+  margin-top: var(--bw-space-4);
+  padding-top: var(--bw-space-3);
+  border-top: 1px solid var(--bw-border);
+}
+.bw-order__details summary {
+  width: fit-content;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--bw-teal-text);
+}
+.bw-order__details ul {
+  margin: var(--bw-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-order__details li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bw-space-4);
+  padding: 0.45rem 0;
+  font-size: 0.92rem;
+  border-bottom: 1px dashed var(--bw-border);
+}
+.bw-order__details li:last-child { border-bottom: 0; }
+
+@media (max-width: 575.98px) {
+  .bw-account-hero__identity { align-items: flex-start; }
+  .bw-account-avatar { width: 60px; height: 60px; font-size: 1.3rem; }
+  .bw-account-hero__actions { width: 100%; }
+  .bw-account-hero__actions .bw-btn { flex: 1; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-account-hero,
+  .bw-account-stats,
+  .bw-account-actions,
+  .bw-account-orders { animation: none; }
+  .bw-account-stat--link:hover,
+  .bw-account-action:hover { transform: none; }
+}

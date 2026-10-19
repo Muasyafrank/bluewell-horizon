@@ -39,7 +39,7 @@ export function useAdminData(token) {
           orders, contacts, quotes, companyInfo,
         ] = await Promise.all([
           adminApi.stats({ token, signal }),
-          catalogApi.listProducts({ signal }),
+          adminApi.listProducts({ token, signal }),
           catalogApi.listServices({ signal }),
           catalogApi.listGallery({ signal }),
           catalogApi.listTechnologies({ signal }),

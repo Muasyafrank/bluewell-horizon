@@ -5,12 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from config import settings
-from database import Base, engine
+from database import Base, engine, ensure_columns
 from models import *  # noqa: F401,F403 — registers every model with Base before create_all
 from routers.admin import UPLOAD_DIR
 from routers import (
     auth, products, services, gallery, technologies, process_steps,
-    company_info, orders, quotes, admin, contact,
+    company_info, orders, quotes, admin, contact, quotations,
+    bms_people, bms_invoices, bms_stock, bms_reports,
 )
 
 app = FastAPI(
@@ -19,6 +20,9 @@ app = FastAPI(
     version="1.0.0",
 )
 Base.metadata.create_all(bind=engine)
+ensure_columns("admins", {"name": "VARCHAR", "role": "VARCHAR", "is_active": "BOOLEAN"})
+ensure_columns("products", {"reorder_level": "INTEGER"})
+ensure_columns("gallery", {"location": "VARCHAR", "year": "INTEGER", "description": "TEXT"})
 
 # CORS origins come from configuration rather than being hard-coded, so
 # staging and production deployments don't silently inherit a localhost-only
@@ -49,6 +53,9 @@ app.include_router(orders.router)
 app.include_router(quotes.router)
 app.include_router(contact.router)
 app.include_router(admin.router)
+app.include_router(quotations.router)
+for _router in (bms_people, bms_invoices, bms_stock, bms_reports):
+    app.include_router(_router.router)
 
 @app.get("/")
 def read_root():

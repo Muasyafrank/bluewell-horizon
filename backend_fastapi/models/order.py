@@ -47,3 +47,4 @@ class Order(Base):
     
     # Relationships
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    quotation = relationship("Quotation", back_populates="order", uselist=False, cascade="all, delete-orphan")

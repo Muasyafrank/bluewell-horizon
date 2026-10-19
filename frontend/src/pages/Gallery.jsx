@@ -1,21 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { FaImages } from 'react-icons/fa';
-import { catalogApi } from '../api';
-import { useApiResource } from '../hooks';
-import { SEO, Image } from '../components/common';
-import { PageBanner } from '../components/layout';
-import { AsyncSection, Card, EmptyState } from '../components/ui';
+import { useGalleryItems } from '../hooks';
+import { Reveal, SEO } from '../components/common';
+import { AsyncSection } from '../components/ui';
+import CtaBand from '../components/marketing/CtaBand';
+import PageHero from '../components/marketing/PageHero';
+import ProjectTile from '../components/marketing/ProjectTile';
 
 const ALL = 'All projects';
 
 export default function Gallery() {
   const [category, setCategory] = useState(ALL);
-  const { data, loading, error, reload } = useApiResource(
-    (options) => catalogApi.listGallery(options),
-    { initialData: [] },
-  );
-
-  const items = useMemo(() => data || [], [data]);
+  const { items, loading, reload } = useGalleryItems();
 
   const categories = useMemo(
     () => [ALL, ...Array.from(new Set(items.map((item) => item.category).filter(Boolean)))],
@@ -35,27 +30,21 @@ export default function Gallery() {
         path="/gallery"
       />
 
-      <PageBanner
+      <PageHero
+        size="sm"
         eyebrow="Our work"
         title="Installations across Kenya"
         lead="Residential estates, commercial facilities and industrial plants we have delivered and continue to service."
+        image="/images/gallery-3.png"
       />
 
       <section className="bw-section">
         <div className="container">
           <AsyncSection
             loading={loading}
-            error={error}
+            error={null}
             onRetry={reload}
             loadingText="Loading projects"
-            isEmpty={items.length === 0}
-            empty={
-              <EmptyState
-                icon={<FaImages />}
-                title="No projects published yet"
-                description="Completed installations are added here as they are photographed."
-              />
-            }
           >
             {categories.length > 2 ? (
               <ul className="bw-tabs" role="tablist" aria-label="Filter projects by category">
@@ -69,6 +58,9 @@ export default function Gallery() {
                       onClick={() => setCategory(name)}
                     >
                       {name}
+                      <span className="bw-tab__count">
+                        {name === ALL ? items.length : items.filter((item) => item.category === name).length}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -76,23 +68,22 @@ export default function Gallery() {
             ) : null}
 
             <div className="row g-4">
-              {visible.map((item) => (
-                <div className="col-sm-6 col-lg-4 col-xl-3" key={item.id}>
-                  <Card flush>
-                    <Image src={item.image} alt={item.title} className="bw-card__media" />
-                    <div className="bw-card__body">
-                      <h2 className="bw-card__title mb-1" style={{ fontSize: '0.9375rem' }}>
-                        {item.title}
-                      </h2>
-                      <p className="small text-muted mb-0">{item.category}</p>
-                    </div>
-                  </Card>
-                </div>
+              {visible.map((item, index) => (
+                <Reveal className="col-sm-6 col-lg-4" index={index % 3} key={item.id}>
+                  <ProjectTile item={item} />
+                </Reveal>
               ))}
             </div>
           </AsyncSection>
         </div>
       </section>
+
+      <CtaBand
+        title="Have a similar project in mind?"
+        lead="Tell us about your supply and your capacity needs. We will recommend a system and put together a costed proposal."
+        primary={{ to: '/quote', label: 'Request a quote' }}
+        secondary={{ to: '/contact', label: 'Talk to an engineer' }}
+      />
     </>
   );
 }

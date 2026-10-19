@@ -11,6 +11,7 @@ import { ordersByStatus, ordersOverTime } from '../analytics';
 const SERIES = { orders: '#2fa5b6', value: '#1d4ed8' };
 const STATUS_COLOURS = {
   processing: '#a16207',
+  quoted: '#7c3aed',
   confirmed: '#1d4ed8',
   shipped: '#2fa5b6',
   delivered: '#15803d',

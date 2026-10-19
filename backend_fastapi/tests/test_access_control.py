@@ -46,3 +46,12 @@ def test_product_without_a_price_can_be_edited_and_restocked(client, admin_heade
     assert client.get(f"/api/products/{product.id}").json()["stock"] == 25
     assert client.put(f"/api/admin/products/{product.id}", json={**body, "stock": -1},
                       headers=admin_headers).status_code == 422
+
+
+def test_public_product_list_works_for_products_without_a_price(client, product):
+    # Regression: a NULL price used to fail response validation and return a 500,
+    # which took down the shop and the whole admin dashboard.
+    response = client.get("/api/products")
+    assert response.status_code == 200
+    assert "price" not in response.json()[0]
+    assert client.get(f"/api/products/{product.id}").status_code == 200

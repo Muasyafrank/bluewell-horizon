@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    Admin, Order, OrderItem, Product, Contact, 
+    Admin, Invoice, Order, OrderItem, Product, Contact, 
     CompanyInfo, Quote, Service, Technology, 
-    Gallery, ProcessStep
+    Gallery, ProcessStep, StockMovement
 )
 from schemas.admin import (
     DashboardStats, StatusUpdate,
@@ -20,12 +20,14 @@ from schemas.admin import (
     TechnologyCreate, ProcessStepCreate,
 )
 from schemas.company_info import CompanyInfoUpdate
+from schemas.products import AdminProductResponse
 from core.security import get_current_admin
+from core.invoicing import InsufficientStock, move_stock
 from core.email import send_email_safely
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
-ORDER_STATUSES = ("processing", "confirmed", "shipped", "delivered", "cancelled")
+ORDER_STATUSES = ("processing", "quoted", "confirmed", "shipped", "delivered", "cancelled")
 
 # Uploads are restricted to a short allow-list of raster image types, and the
 # stored extension comes from the *detected* type rather than the client's
@@ -170,6 +172,25 @@ def get_order_detail(
 
     return {"order": order_dict, "items": items_list}
 
+def _restock(db: Session, order: Order, direction: int, reason: str, admin: Admin) -> None:
+    """Puts an order's goods back in stock (cancel) or takes them out again (reopen)."""
+    for item in db.query(OrderItem).filter(OrderItem.order_id == order.id).all():
+        product = db.get(Product, item.product_id)
+        if product is None:
+            continue
+        quantity = item.quantity
+        if direction > 0:
+            # Give back only what this order actually took. If stock ran short when it
+            # was placed, the order took less than it asked for.
+            taken = -(db.query(func.coalesce(func.sum(StockMovement.change), 0))
+                      .filter(StockMovement.product_id == product.id,
+                              StockMovement.reference == order.order_number).scalar() or 0)
+            quantity = max(0, min(quantity, taken))
+        if quantity:
+            move_stock(db, product, direction * quantity, reason, reference=order.order_number,
+                       note="Order cancelled" if direction > 0 else "Order reopened", by=admin.display_name)
+
+
 @router.put("/orders/{order_id}/status")
 def update_order_status(
     order_id: int,
@@ -184,6 +205,18 @@ def update_order_status(
 
     if status_data.status not in ORDER_STATUSES:
         raise HTTPException(status_code=400, detail="Invalid status")
+
+    was_cancelled = order.order_status == "cancelled"
+    will_cancel = status_data.status == "cancelled"
+    if will_cancel and not was_cancelled:
+        if db.query(Invoice).filter(Invoice.order_id == order.id, Invoice.status != "void").first():
+            raise HTTPException(status_code=409, detail="This order has an invoice. Void the invoice before cancelling it.")
+        _restock(db, order, +1, "return", admin)
+    elif was_cancelled and not will_cancel:
+        try:
+            _restock(db, order, -1, "sale", admin)
+        except InsufficientStock as error:
+            raise HTTPException(status_code=409, detail=f"Not enough stock to reopen this order: {error}")
 
     order.order_status = status_data.status
     db.commit()
@@ -266,6 +299,16 @@ def delete_contact(
 # ============================================
 # PRODUCT CRUD
 # ============================================
+@router.get("/products")
+def list_products(
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """The catalogue including each product's internal price. The public
+    /api/products leaves the price out."""
+    products = db.query(Product).order_by(Product.id).all()
+    return [AdminProductResponse.model_validate(p).model_dump(by_alias=True) for p in products]
+
 @router.post("/products")
 def create_product(
     product: ProductCreate,
@@ -393,7 +436,10 @@ def create_gallery(
     new_gallery = Gallery(
         title=gallery.title,
         category=gallery.category,
-        image=gallery.image
+        image=gallery.image,
+        location=gallery.location or None,
+        year=gallery.year,
+        description=gallery.description or None,
     )
     db.add(new_gallery)
     db.commit()
@@ -415,6 +461,9 @@ def update_gallery(
     existing.category = gallery.category
     if gallery.image:
         existing.image = gallery.image
+    existing.location = gallery.location or None
+    existing.year = gallery.year
+    existing.description = gallery.description or None
     db.commit()
     return {"message": "Gallery updated"}
 
@@ -626,6 +675,7 @@ def notify_status_change(order_number: str, customer_name: str, customer_email: 
     """
     status_messages = {
         "processing": "Your order is being processed.",
+        "quoted": "We have sent you a quotation with the payment details. Please check your email.",
         "confirmed": "Your order has been confirmed and is being prepared.",
         "shipped": "Your order has been shipped and is on its way!",
         "delivered": "Your order has been delivered. Thank you for choosing Bluewell Horizon!",

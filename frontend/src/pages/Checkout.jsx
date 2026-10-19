@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronDown, FaLock, FaPhoneAlt, FaTruck } from 'react-icons/fa';
+import { FaChevronDown, FaLock } from 'react-icons/fa';
 import { ordersApi } from '../api';
 import { useCart } from '../context/CartContext';
 import { useCustomer } from '../context/CustomerContext';
 import { SEO, Image } from '../components/common';
-import { PageBanner } from '../components/layout';
+import PageHero from '../components/marketing/PageHero';
 import { Button, Card, Field, SearchableSelect } from '../components/ui';
-import { COUNTIES, VAT_RATE, getDeliveryOption } from '../utils/kenyanData';
+import { COUNTIES, getDeliveryOption } from '../utils/kenyanData';
 import { email, kenyanPhone, required, validate } from '../utils/validation';
 import { toastError } from '../utils/toast';
 import { CONTACT_DETAILS } from '../data/company';
@@ -17,8 +17,8 @@ import { CONTACT_DETAILS } from '../data/company';
 // backend, and the business still needs to know how the customer intends to
 // be reached about payment — so rather than silently guess, every order now
 // says plainly it will be followed up by phone. "standard" delivery is used
-// internally for the ETA shown and for the (hidden) fee calculation the
-// admin dashboard still relies on for its own totals.
+// internally for the delivery estimate shown. No prices are sent: the admin
+// sets them, and the delivery fee, when preparing the quotation.
 const DEFAULT_DELIVERY_METHOD = 'standard';
 const DEFAULT_PAYMENT_METHOD = 'cod';
 
@@ -49,7 +49,7 @@ function buildRules() {
 export default function Checkout() {
   const navigate = useNavigate();
   const { token, isAuthenticated, user: customer } = useCustomer();
-  const { items, count, subtotal, isEmpty, clearCart } = useCart();
+  const { items, count, isEmpty, clearCart } = useCart();
 
   const [values, setValues] = useState(INITIAL_VALUES);
   const [errors, setErrors] = useState({});
@@ -69,15 +69,6 @@ export default function Checkout() {
       customerPhone: current.customerPhone || customer.phone || '',
     }));
   }, [isAuthenticated, customer]);
-
-  // Not shown anywhere on this page — computed only so the order record
-  // created on the backend (and the admin dashboard that reads it) still has
-  // real numbers to work with.
-  const { deliveryFee, vatAmount, total } = useMemo(() => {
-    const fee = values.county ? getDeliveryOption(values.county, DEFAULT_DELIVERY_METHOD).fee : 0;
-    const vat = (subtotal + fee) * VAT_RATE;
-    return { deliveryFee: fee, vatAmount: vat, total: subtotal + fee + vat };
-  }, [subtotal, values.county]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -116,15 +107,10 @@ export default function Checkout() {
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
-            price: item.price,
             quantity: item.quantity,
             category: item.category,
             image: item.image,
           })),
-          subtotal,
-          deliveryFee,
-          vatAmount,
-          totalAmount: total,
         },
         { token: isAuthenticated ? token : undefined },
       );
@@ -151,7 +137,8 @@ export default function Checkout() {
         noIndex
       />
 
-      <PageBanner
+      <PageHero
+        size="sm"
         eyebrow="Checkout"
         title="Submit your order"
         lead="Give us your details and delivery address — we'll call to confirm delivery and payment."
@@ -163,9 +150,9 @@ export default function Checkout() {
           <div className="row g-5">
             <div className="col-lg-7">
               <form onSubmit={handleSubmit} noValidate>
-                <Card tint className="mb-4">
-                  <h2 className="h5 d-flex align-items-center gap-2 mb-4">
-                    <FaPhoneAlt aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Your details
+                <Card className="bw-form-card mb-4">
+                  <h2 className="bw-form-card__title">
+                    <span className="bw-form-card__step" aria-hidden="true">1</span> Your details
                   </h2>
                   <div className="row g-3">
                     <div className="col-md-6">
@@ -246,9 +233,9 @@ export default function Checkout() {
                   )}
                 </Card>
 
-                <Card tint className="mb-4">
-                  <h2 className="h5 d-flex align-items-center gap-2 mb-4">
-                    <FaTruck aria-hidden="true" style={{ color: 'var(--bw-teal)' }} /> Delivery address
+                <Card className="bw-form-card mb-4">
+                  <h2 className="bw-form-card__title">
+                    <span className="bw-form-card__step" aria-hidden="true">2</span> Delivery address
                   </h2>
                   <div className="row g-3">
                     <div className="col-md-6">
@@ -308,7 +295,7 @@ export default function Checkout() {
                   ) : null}
                 </Card>
 
-                <Card tint className="mb-4">
+                <Card className="bw-form-card mb-4">
                   <Field
                     label="Delivery notes"
                     name="notes"
@@ -333,29 +320,24 @@ export default function Checkout() {
             </div>
 
             <div className="col-lg-5">
-              <Card tint className="bw-sticky-aside">
-                <h2 className="h5 mb-4">Your order</h2>
-                <ul className="list-unstyled mb-0">
+              <aside className="bw-summary-panel bw-sticky-aside">
+                <h2 className="bw-summary-panel__title">Your order</h2>
+                <p className="bw-summary-panel__count">
+                  {count} {count === 1 ? 'item' : 'items'}
+                </p>
+                <ul className="bw-summary-panel__items">
                   {items.map((item) => (
-                    <li className="d-flex gap-3 pb-3 mb-3 border-bottom" key={item.id}>
+                    <li key={item.id}>
                       <Image src={item.image} alt="" className="bw-thumb bw-thumb--sm" />
-                      <div className="flex-grow-1">
-                        <p className="fw-semibold mb-1" style={{ fontSize: '0.875rem' }}>
-                          {item.name}
-                        </p>
-                        <p className="small text-muted mb-0">Quantity: {item.quantity}</p>
-                      </div>
+                      <span className="bw-summary-panel__name">{item.name}</span>
+                      <span className="bw-summary-panel__qty">× {item.quantity}</span>
                     </li>
                   ))}
                 </ul>
-                <p className="small text-muted mb-0">
-                  {count} {count === 1 ? 'item' : 'items'} in this order.
+                <p className="bw-summary-panel__note">
+                  Need a hand with this order? Call {CONTACT_DETAILS.phones.join(' or ')}.
                 </p>
-              </Card>
-
-              <p className="text-center small text-muted mt-4 mb-0">
-                Need a hand with this order? Call {CONTACT_DETAILS.phones.join(' or ')}.
-              </p>
+              </aside>
             </div>
           </div>
         </div>

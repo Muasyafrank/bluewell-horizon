@@ -10,13 +10,13 @@ import { useCustomer } from '../../context/CustomerContext';
  * remembers where the visitor was headed, so after signing in they land on the
  * page they asked for instead of the home page.
  */
-export default function RequireAuth({ audience = 'customer', children }) {
+export default function RequireAuth({ audience = 'customer', loginPath: loginOverride, children }) {
   const location = useLocation();
   const customer = useCustomer();
   const admin = useAdmin();
 
   const { isAuthenticated } = audience === 'admin' ? admin : customer;
-  const loginPath = audience === 'admin' ? '/admin/login' : '/login';
+  const loginPath = loginOverride || (audience === 'admin' ? '/admin/login' : '/login');
 
   if (!isAuthenticated) {
     return <Navigate to={loginPath} replace state={{ from: location.pathname + location.search }} />;

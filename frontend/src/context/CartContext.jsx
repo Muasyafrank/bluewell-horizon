@@ -27,7 +27,6 @@ function toCartItem(product, quantity) {
   return {
     id: product.id,
     name: product.name,
-    price: toNumber(product.price),
     image: product.image,
     category: product.category,
     quantity: clampQuantity(quantity),
@@ -117,14 +116,12 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => dispatch({ type: 'clear' }), []);
 
   const value = useMemo(() => {
-    const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
     const count = items.reduce((total, item) => total + item.quantity, 0);
     const quantities = new Map(items.map((item) => [item.id, item.quantity]));
 
     return {
       items,
       count,
-      subtotal,
       isEmpty: items.length === 0,
       maxQuantity: MAX_QUANTITY,
       quantityOf: (id) => quantities.get(id) ?? 0,

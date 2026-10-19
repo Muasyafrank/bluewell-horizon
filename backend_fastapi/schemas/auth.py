@@ -9,6 +9,15 @@ class AdminLogin(BaseModel):
 class AdminResponse(CamelModel):
     id: int
     email: str
+    name: Optional[str] = None
+    role: str = "admin"
+
+    @classmethod
+    def model_validate(cls, obj, *args, **kwargs):
+        # Older rows have no role stored; they are administrators.
+        if hasattr(obj, "effective_role"):
+            return cls(id=obj.id, email=obj.email, name=obj.display_name, role=obj.effective_role)
+        return super().model_validate(obj, *args, **kwargs)
 
 class CustomerRegister(BaseModel):
     name: str = Field(min_length=1, max_length=120)

@@ -28,7 +28,8 @@ export default function AdminLogin() {
       const data = await authApi.adminLogin(values);
       login(data.token);
       toastSuccess('Signed in');
-      navigate('/admin/dashboard', { replace: true });
+      // Sales, accounts and stores staff have no use for the website dashboard.
+      navigate(data.admin?.role && data.admin.role !== 'admin' ? '/staff' : '/admin/dashboard', { replace: true });
     } catch (error) {
       toastError(error.message);
       setSubmitting(false);

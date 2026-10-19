@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { SEO } from '../components/common';
 import { AsyncSection, Button, EmptyState, Field, Pagination } from '../components/ui';
+import PageHero from '../components/marketing/PageHero';
 import ProductCard from '../components/shop/ProductCard';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { products as fallbackProducts } from '../data/products';
@@ -114,7 +115,15 @@ export default function Shop() {
         path="/shop"
       />
 
-      <section className="bw-page bw-section">
+      <PageHero
+        size="sm"
+        eyebrow="Shop"
+        title="Water treatment products"
+        lead="Filtration, softening and disinfection systems with delivery across Kenya."
+        image="/images/gallery-5.png"
+      />
+
+      <section className="bw-section">
         <div className="container">
           <div className="bw-catalog">
             <CategorySidebar
@@ -125,11 +134,6 @@ export default function Shop() {
             />
 
             <div>
-              <div className="bw-catalog-header">
-                <span className="bw-catalog-header__title">Product Center</span>
-                <span className="bw-catalog-header__crumb">Home / Shop / {category}</span>
-              </div>
-
               <div className="bw-catalog-toolbar">
                 <div className="bw-catalog-toolbar__search">
                   <Field
@@ -180,7 +184,7 @@ export default function Shop() {
                   <>
                     <div className="row g-3">
                       {pagedProducts.map((product) => (
-                        <div className="col-12 col-lg-4 col-sm-6 col-xl-3" key={product.id}>
+                        <div className="col-12 col-sm-6 col-xl-4" key={product.id}>
                           <ProductCard
                             product={product}
                             quantity={quantityOf(product.id)}

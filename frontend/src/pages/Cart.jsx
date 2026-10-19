@@ -3,8 +3,8 @@ import { FaArrowLeft, FaLock, FaShoppingBag, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { SEO } from '../components/common';
-import { PageBanner } from '../components/layout';
-import { Button, Card, EmptyState, Modal } from '../components/ui';
+import PageHero from '../components/marketing/PageHero';
+import { Button, EmptyState, Modal } from '../components/ui';
 import CartLine from '../components/shop/CartLine';
 import { toastSuccess } from '../utils/toast';
 import { pluralise } from '../utils/format';
@@ -33,7 +33,8 @@ export default function Cart() {
         noIndex
       />
 
-      <PageBanner
+      <PageHero
+        size="sm"
         eyebrow="Cart"
         title="Your cart"
         lead={
@@ -92,21 +93,19 @@ export default function Cart() {
               </div>
 
               <div className="col-lg-4">
-                <Card tint className="bw-sticky-aside">
-                  <h2 className="h5 mb-3">Ready to checkout?</h2>
-                  <p className="text-muted mb-0">
-                    You have {count} {pluralise(count, 'item')} in your cart. Delivery options and
-                    your order total are confirmed on the next step.
+                <aside className="bw-summary-panel bw-sticky-aside">
+                  <h2 className="bw-summary-panel__title">Ready to checkout?</h2>
+                  <p className="bw-summary-panel__count">
+                    {count} {pluralise(count, 'item')}
                   </p>
-                </Card>
-
-                <Button to="/checkout" size="lg" block className="mt-4" icon={<FaLock aria-hidden="true" />}>
-                  Continue to checkout
-                </Button>
-
-                <p className="text-center small text-muted mt-3 mb-0">
-                  Pay by M-Pesa, bank transfer or cash on delivery.
-                </p>
+                  <p className="bw-summary-panel__text">
+                    Delivery options and your order total are confirmed on the next step.
+                  </p>
+                  <Button to="/checkout" variant="onDark" size="lg" block icon={<FaLock aria-hidden="true" />}>
+                    Continue to checkout
+                  </Button>
+                  <p className="bw-summary-panel__note">Pay by M-Pesa, bank transfer or cash on delivery.</p>
+                </aside>
               </div>
             </div>
           )}

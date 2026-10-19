@@ -78,6 +78,9 @@ class GalleryCreate(BaseModel):
     title: str
     category: str
     image: str
+    location: Optional[str] = None
+    year: Optional[int] = None
+    description: Optional[str] = None
 
 class TechnologyCreate(BaseModel):
     name: str

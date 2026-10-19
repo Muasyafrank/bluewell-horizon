@@ -5,7 +5,7 @@
  */
 import { http } from './client';
 
-export { API_BASE_URL, ApiError, assetUrl } from './client';
+export { API_BASE_URL, ApiError, assetUrl, downloadFile } from './client';
 
 /* --- Public catalogue ---------------------------------------------------- */
 
@@ -55,11 +55,21 @@ export const ADMIN_COLLECTIONS = {
 export const adminApi = {
   stats: (options) => http.get('/api/admin/stats', options),
 
+  // The catalogue with each product's internal price (the public list has none).
+  listProducts: (options) => http.get('/api/admin/products', options),
+
   listOrders: (options) => http.get('/api/admin/orders', options),
   getOrder: (id, options) => http.get(`/api/admin/orders/${id}`, options),
   updateOrderStatus: (id, status, options) =>
     http.put(`/api/admin/orders/${id}/status`, { status }, options),
   deleteOrder: (id, options) => http.del(`/api/admin/orders/${id}`, options),
+
+  getQuotation: (orderId, options) => http.get(`/api/admin/orders/${orderId}/quotation`, options),
+  saveQuotation: (orderId, body, options) => http.put(`/api/admin/orders/${orderId}/quotation`, body, options),
+  previewQuotation: (orderId, body, options) =>
+    http.post(`/api/admin/orders/${orderId}/quotation/preview`, body, options),
+  sendQuotation: (orderId, body, options) =>
+    http.post(`/api/admin/orders/${orderId}/quotation/send`, body, options),
 
   listContacts: (options) => http.get('/api/admin/contacts', options),
   markContactRead: (id, options) => http.put(`/api/admin/contacts/${id}/read`, undefined, options),
@@ -83,4 +93,55 @@ export const adminApi = {
     form.append('image', file);
     return http.post('/api/admin/upload', form, options);
   },
+};
+
+/* --- Business system (staff) ---------------------------------------------- */
+
+const qs = (params = {}) => {
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
+  return entries.length ? `?${new URLSearchParams(entries).toString()}` : '';
+};
+
+export const bmsApi = {
+  me: (options) => http.get('/api/bms/me', options),
+  dashboard: (options) => http.get('/api/bms/dashboard', options),
+
+  listInvoices: (options) => http.get('/api/bms/invoices', options),
+  readyToInvoice: (options) => http.get('/api/bms/invoices/ready', options),
+  getInvoice: (id, options) => http.get(`/api/bms/invoices/${id}`, options),
+  createInvoice: (body, options) => http.post('/api/bms/invoices', body, options),
+  invoiceFromOrder: (orderId, body, options) =>
+    http.post(`/api/bms/invoices/from-order/${orderId}`, body || {}, options),
+  voidInvoice: (id, options) => http.post(`/api/bms/invoices/${id}/void`, undefined, options),
+  sendInvoice: (id, options) => http.post(`/api/bms/invoices/${id}/send`, undefined, options),
+  recordPayment: (id, body, options) => http.post(`/api/bms/invoices/${id}/payments`, body, options),
+  removePayment: (id, paymentId, options) => http.del(`/api/bms/invoices/${id}/payments/${paymentId}`, options),
+
+  listCustomers: (options) => http.get('/api/bms/customers', options),
+  getCustomer: (email, options) => http.get(`/api/bms/customers/detail${qs({ email })}`, options),
+  addNote: (email, body, options) => http.post(`/api/bms/customers/notes${qs({ email })}`, { body }, options),
+  deleteNote: (id, options) => http.del(`/api/bms/customers/notes/${id}`, options),
+
+  listStock: (options) => http.get('/api/bms/stock', options),
+  stockMovements: (id, options) => http.get(`/api/bms/stock/${id}/movements`, options),
+  adjustStock: (id, body, options) => http.post(`/api/bms/stock/${id}/adjust`, body, options),
+  setReorderLevel: (id, reorderLevel, options) =>
+    http.put(`/api/bms/stock/${id}/reorder-level`, { reorderLevel }, options),
+
+  listSuppliers: (options) => http.get('/api/bms/suppliers', options),
+  createSupplier: (body, options) => http.post('/api/bms/suppliers', body, options),
+  updateSupplier: (id, body, options) => http.put(`/api/bms/suppliers/${id}`, body, options),
+
+  listPurchaseOrders: (options) => http.get('/api/bms/purchase-orders', options),
+  createPurchaseOrder: (body, options) => http.post('/api/bms/purchase-orders', body, options),
+  updatePurchaseOrder: (id, body, options) => http.put(`/api/bms/purchase-orders/${id}`, body, options),
+  purchaseOrderAction: (id, action, options) =>
+    http.post(`/api/bms/purchase-orders/${id}/${action}`, undefined, options),
+
+  summary: (params, options) => http.get(`/api/bms/reports/summary${qs(params)}`, options),
+  invoicesCsvPath: (params) => `/api/bms/reports/invoices.csv${qs(params)}`,
+
+  listStaff: (options) => http.get('/api/bms/staff', options),
+  createStaff: (body, options) => http.post('/api/bms/staff', body, options),
+  updateStaff: (id, body, options) => http.patch(`/api/bms/staff/${id}`, body, options),
 };

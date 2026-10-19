@@ -13,6 +13,7 @@ class Product(Base):
     category = Column(String, nullable=False)
     image = Column(String)
     stock = Column(Integer, default=0)
+    reorder_level = Column(Integer, nullable=True)  # low-stock alert threshold; empty = no alert
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 # Base.metadata.create_all(bind=engine)
