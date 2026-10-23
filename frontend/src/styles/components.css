@@ -1776,3 +1776,16 @@ footer{
   font-weight: 700;
   line-height: 1.4rem;
 }
+
+/* Footer under long admin and staff tables: "Showing 26–50 of 130" and page buttons. */
+.bw-table-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--bw-border, #e2e8f0);
+}
+.bw-table-pager__summary { font-size: 0.875rem; color: var(--bw-text-muted, #64748b); }
+.bw-table-pager .bw-pagination { margin: 0; }

@@ -55,3 +55,8 @@ def test_public_product_list_works_for_products_without_a_price(client, product)
     assert response.status_code == 200
     assert "price" not in response.json()[0]
     assert client.get(f"/api/products/{product.id}").status_code == 200
+
+
+def test_admin_login_ignores_email_case(client, admin):
+    response = client.post("/api/admin/login", json={"email": "Admin@Example.com ", "password": "correct-horse-battery"})
+    assert response.status_code == 200

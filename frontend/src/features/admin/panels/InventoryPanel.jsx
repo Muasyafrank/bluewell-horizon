@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { FaMinus, FaPlus, FaSearch, FaWarehouse } from 'react-icons/fa';
 import { adminApi } from '../../../api';
-import { Badge, EmptyState, Field, Modal } from '../../../components/ui';
+import { Badge, EmptyState, Field, Modal, TablePager } from '../../../components/ui';
+import { usePagedRows } from '../../../hooks';
 import { Image } from '../../../components/common';
 import { toastError, toastSuccess } from '../../../utils/toast';
 import { STOCK_ACTIONS, STOCK_LEVELS, nextStock, stockLevel, summariseStock } from '../stock';
@@ -50,6 +51,7 @@ export default function InventoryPanel({ products, token, onChanged }) {
       })
       .sort((a, b) => (Number(a.stock) || 0) - (Number(b.stock) || 0));
   }, [products, search, levelFilter]);
+  const pager = usePagedRows(rows, { resetKey: `${search}|${levelFilter}` });
 
   const openAdjustment = (product, action) => {
     setAdjustment({ product, action });
@@ -153,7 +155,7 @@ export default function InventoryPanel({ products, token, onChanged }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((product) => {
+              {pager.visible.map((product) => {
                 const level = STOCK_LEVELS[stockLevel(product.stock)];
                 return (
                   <tr key={product.id}>
@@ -204,6 +206,7 @@ export default function InventoryPanel({ products, token, onChanged }) {
               })}
             </tbody>
           </table>
+          <TablePager pager={pager} />
         </div>
       )}
 

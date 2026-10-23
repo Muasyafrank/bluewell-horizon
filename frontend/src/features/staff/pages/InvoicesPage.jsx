@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { bmsApi } from '../../../api';
-import { AsyncSection, Button } from '../../../components/ui';
-import { useApiResource } from '../../../hooks';
+import { AsyncSection, Button, TablePager } from '../../../components/ui';
+import { useApiResource, useDebouncedValue, usePagedResource } from '../../../hooks';
 import { formatCurrency, formatDate } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
 import InvoiceFormModal from '../InvoiceFormModal';
@@ -13,19 +13,16 @@ import { Empty, PageHead, StatusTone } from '../ui';
 export default function InvoicesPage() {
   const { token } = useStaff();
   const navigate = useNavigate();
-  const invoices = useApiResource((o) => bmsApi.listInvoices({ ...o, token }), { deps: [token], initialData: [] });
   const ready = useApiResource((o) => bmsApi.readyToInvoice({ ...o, token }), { deps: [token], initialData: [] });
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
+  const search = useDebouncedValue(query.trim(), 300);
+  const invoices = usePagedResource(
+    (params, o) => bmsApi.listInvoices(params, { ...o, token }),
+    { filters: { q: search, status: status === 'all' ? '' : status }, deps: [token] },
+  );
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(null);
-
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (invoices.data || []).filter((i) =>
-      (status === 'all' || i.paymentStatus === status) &&
-      (!q || [i.number, i.customerName, i.companyName, i.customerEmail].some((v) => (v || '').toLowerCase().includes(q))));
-  }, [invoices.data, query, status]);
 
   const invoiceOrder = async (orderId) => {
     setBusy(orderId);
@@ -74,14 +71,14 @@ export default function InvoicesPage() {
       </div>
 
       <AsyncSection loading={invoices.loading} error={invoices.error} onRetry={invoices.reload}>
-        {rows.length === 0 ? (
-          <Empty>{invoices.data?.length ? 'No invoices match.' : 'No invoices yet. Create one above, or from a quoted order.'}</Empty>
+        {invoices.rows.length === 0 ? (
+          <Empty>{search || status !== 'all' ? 'No invoices match.' : 'No invoices yet. Create one above, or from a quoted order.'}</Empty>
         ) : (
           <div className="bms-table-wrap">
             <table className="bms-table">
               <thead><tr><th>Invoice</th><th>Customer</th><th>Issued</th><th>Due</th><th className="num">Total</th><th className="num">Balance</th><th>Status</th></tr></thead>
               <tbody>
-                {rows.map((i) => (
+                {invoices.rows.map((i) => (
                   <tr key={i.id} className="is-click" onClick={() => navigate(`/staff/invoices/${i.id}`)}>
                     <td><button type="button" className="bms-link" onClick={(e) => { e.stopPropagation(); navigate(`/staff/invoices/${i.id}`); }}>{i.number}</button></td>
                     <td>{i.customerName}{i.companyName ? <div className="bms-sub">{i.companyName}</div> : null}</td>
@@ -94,6 +91,7 @@ export default function InvoicesPage() {
                 ))}
               </tbody>
             </table>
+            <TablePager pager={invoices.pager} />
           </div>
         )}
       </AsyncSection>

@@ -13,7 +13,7 @@ function buildPageList(current, total) {
  * Numbered pagination with previous/next controls.
  * Renders nothing when there is only one page.
  */
-export default function Pagination({ page, pageCount, onChange }) {
+export default function Pagination({ page, pageCount, onChange, label = 'Product pages' }) {
   const pages = useMemo(() => buildPageList(page, pageCount), [page, pageCount]);
 
   if (pageCount <= 1) return null;
@@ -26,7 +26,7 @@ export default function Pagination({ page, pageCount, onChange }) {
   let previous = 0;
 
   return (
-    <nav className="bw-pagination" aria-label="Product pages">
+    <nav className="bw-pagination" aria-label={label}>
       <button
         type="button"
         className="bw-pagination__item"

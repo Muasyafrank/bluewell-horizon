@@ -10,8 +10,7 @@ from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from config import settings
-from core.email import email_is_configured, send_email
+from core.email import business_address, email_is_configured, send_email
 from core.payments import available_payment_methods
 from core.quotation import compute_totals, money, quote_number_for, render_quotation_email
 from core.security import get_current_admin
@@ -189,7 +188,7 @@ def send_quotation(
     try:
         # Sent inside the request (not in the background) because the admin
         # needs to know whether it actually went. A copy goes to the company.
-        send_email(subject=subject, body=html, to=order.customer_email, cc=settings.email_user)
+        send_email(subject=subject, body=html, to=order.customer_email, cc=business_address())
     except Exception:  # noqa: BLE001 — any SMTP failure is reported the same way
         logger.exception("Could not send quotation %s", quotation.quote_number)
         raise HTTPException(

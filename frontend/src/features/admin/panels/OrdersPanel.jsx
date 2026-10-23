@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { FaEdit, FaEye, FaFileInvoice, FaTrash, FaUser, FaShoppingCart } from 'react-icons/fa';
 import { adminApi } from '../../../api';
-import { Button, Field, Modal, StatusBadge, ORDER_STATUSES } from '../../../components/ui';
+import { Button, Field, Modal, StatusBadge, TablePager, ORDER_STATUSES } from '../../../components/ui';
 import { Image } from '../../../components/common';
+import { usePagedRows } from '../../../hooks';
 import QuotationModal from './QuotationModal';
 import { formatCurrency, formatDateTime } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
@@ -13,6 +14,7 @@ import { toastError, toastSuccess } from '../../../utils/toast';
  * failed update showed no error and silently left the order unchanged.
  */
 export default function OrdersPanel({ orders, token, onChanged }) {
+  const pager = usePagedRows(orders);
   const [viewing, setViewing] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [statusTarget, setStatusTarget] = useState(null);
@@ -87,7 +89,7 @@ export default function OrdersPanel({ orders, token, onChanged }) {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {pager.visible.map((order) => (
                 <tr key={order.id}>
                   <td className="fw-semibold">{order.orderNumber}</td>
                   <td>
@@ -141,6 +143,7 @@ export default function OrdersPanel({ orders, token, onChanged }) {
               ))}
             </tbody>
           </table>
+          <TablePager pager={pager} />
         </div>
       )}
 

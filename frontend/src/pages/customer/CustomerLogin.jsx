@@ -72,6 +72,10 @@ export default function CustomerLogin() {
             required
           />
 
+          <p className="text-end small mb-3">
+            <Link to="/forgot-password">Forgot your password?</Link>
+          </p>
+
           <Button type="submit" block size="lg" loading={submitting} loadingText="Signing in">
             Sign in
           </Button>

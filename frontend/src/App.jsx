@@ -29,6 +29,8 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 const CustomerLogin = lazy(() => import('./pages/customer/CustomerLogin'));
 const CustomerRegister = lazy(() => import('./pages/customer/CustomerRegister'));
+const ForgotPassword = lazy(() => import('./pages/customer/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/customer/ResetPassword'));
 const AccountDashboard = lazy(() => import('./pages/customer/AccountDashboard'));
 
 const AdminLogin = lazy(() => import('./features/admin/AdminLogin'));
@@ -116,6 +118,8 @@ export default function App() {
 
                         <Route path="login" element={<CustomerLogin />} />
                         <Route path="register" element={<CustomerRegister />} />
+                        <Route path="forgot-password" element={<ForgotPassword />} />
+                        <Route path="reset-password" element={<ResetPassword />} />
                         <Route
                           path="account"
                           element={

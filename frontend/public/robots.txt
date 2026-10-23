@@ -7,6 +7,14 @@ Disallow: /admin/
 Disallow: /admin/login
 Disallow: /admin/dashboard
 
+# Staff business system and signed-in pages
+Disallow: /staff/
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /wishlist
+Disallow: /order-success
+
 # Sitemap location
 Sitemap: https://www.bluewellhorizonlimited.com/sitemap.xml
 

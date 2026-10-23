@@ -1,12 +1,15 @@
+import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from config import settings
-from database import Base, engine, ensure_columns
-from models import *  # noqa: F401,F403 — registers every model with Base before create_all
+from sqlalchemy import text
+
+from database import engine
+from schema import sync_schema
 from routers.admin import UPLOAD_DIR
 from routers import (
     auth, products, services, gallery, technologies, process_steps,
@@ -14,15 +17,23 @@ from routers import (
     bms_people, bms_invoices, bms_stock, bms_reports,
 )
 
+logging.basicConfig(
+    level=getattr(logging, settings.log_level, logging.INFO),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
+IS_PRODUCTION = settings.environment == "production"
+
 app = FastAPI(
     title="Bluewell Horizon API",
     description="Backend API for Bluewell Horizon Limited",
     version="1.0.0",
+    # The interactive docs list every route; keep them off the public internet.
+    docs_url=None if IS_PRODUCTION else "/docs",
+    redoc_url=None if IS_PRODUCTION else "/redoc",
+    openapi_url=None if IS_PRODUCTION else "/openapi.json",
 )
-Base.metadata.create_all(bind=engine)
-ensure_columns("admins", {"name": "VARCHAR", "role": "VARCHAR", "is_active": "BOOLEAN"})
-ensure_columns("products", {"reorder_level": "INTEGER"})
-ensure_columns("gallery", {"location": "VARCHAR", "year": "INTEGER", "description": "TEXT"})
+sync_schema()
 
 # CORS origins come from configuration rather than being hard-coded, so
 # staging and production deployments don't silently inherit a localhost-only
@@ -31,9 +42,24 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """Headers that stop browsers guessing content types, framing the API, or leaking URLs."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if IS_PRODUCTION:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    if request.url.path.startswith("/api/"):
+        # Admin, account and order responses are personal; never let a cache keep them.
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
 
 # Serve uploaded images from the same directory the upload endpoint writes to.
 # Mounted at /uploads rather than /images so it can never collide with the
@@ -59,10 +85,26 @@ for _router in (bms_people, bms_invoices, bms_stock, bms_reports):
 
 @app.get("/")
 def read_root():
-    """Health check."""
-    return {"message": "Bluewell Horizon FastAPI Backend is Running! 🚀"}
+    """Liveness check: the process is up."""
+    return {"message": "Bluewell Horizon API is running"}
+
+
+@app.get("/health")
+def health(response: Response):
+    """Readiness check for uptime monitors and load balancers: also proves the database answers."""
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).exception("Health check: database unreachable")
+        response.status_code = 503
+        return {"status": "unavailable"}
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":
+    # Development server only. In production run `uvicorn main:app` behind a
+    # reverse proxy (see docs/deployment.md); never use reload there.
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=not IS_PRODUCTION)
+

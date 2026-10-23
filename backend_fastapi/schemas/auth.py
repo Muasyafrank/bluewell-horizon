@@ -31,6 +31,13 @@ class CustomerLogin(BaseModel):
     email: EmailStr
     password: str
 
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+class ResetPassword(BaseModel):
+    token: str = Field(min_length=10, max_length=2000)
+    password: str = Field(min_length=8, max_length=72)
+
 class CustomerResponse(CamelModel):
     id: int
     name: str

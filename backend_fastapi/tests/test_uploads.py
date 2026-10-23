@@ -36,3 +36,15 @@ def test_upload_requires_admin(client, customer_headers):
     response = client.post("/api/admin/upload", headers=customer_headers,
                            files={"image": ("a.png", PNG, "image/png")})
     assert response.status_code == 401
+
+
+def test_a_script_renamed_to_png_is_refused(client, admin_headers):
+    response = client.post("/api/admin/upload", headers=admin_headers,
+                           files={"image": ("innocent.png", b"<script>alert(1)</script>", "image/png")})
+    assert response.status_code == 415
+
+
+def test_a_real_png_declared_as_jpeg_is_refused(client, admin_headers):
+    response = client.post("/api/admin/upload", headers=admin_headers,
+                           files={"image": ("a.jpg", PNG, "image/jpeg")})
+    assert response.status_code == 415

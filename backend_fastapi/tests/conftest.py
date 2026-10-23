@@ -23,6 +23,20 @@ from database import Base, SessionLocal, engine  # noqa: E402
 from main import app  # noqa: E402
 from models import Admin, Customer, Product  # noqa: E402
 
+# config.py also reads backend_fastapi/.env, which on a real machine holds the live Gmail
+# settings. Tests must never send (or wait on) real email, so switch every route off here.
+from config import settings  # noqa: E402
+for _name in ("email_user", "email_pass", "gmail_client_id", "gmail_client_secret", "gmail_refresh_token"):
+    setattr(settings, _name, None)
+
+
+@pytest.fixture(autouse=True)
+def fresh_rate_limits():
+    """Counts are per process, so without this one test's sign-ins would count against the next."""
+    from core import ratelimit
+    ratelimit.reset()
+    yield
+
 
 @pytest.fixture(autouse=True)
 def fresh_database():

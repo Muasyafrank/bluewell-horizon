@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { FaCalendar, FaEnvelope, FaEye, FaPhone, FaTrash } from 'react-icons/fa';
 import { adminApi } from '../../../api';
-import { Badge, Button, Modal } from '../../../components/ui';
+import { Badge, Button, Modal, TablePager } from '../../../components/ui';
+import { usePagedRows } from '../../../hooks';
 import { formatDateTime } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
 
 export default function InquiriesPanel({ contacts, token, onChanged }) {
+  const pager = usePagedRows(contacts);
   const [viewing, setViewing] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
@@ -51,7 +53,7 @@ export default function InquiriesPanel({ contacts, token, onChanged }) {
               </tr>
             </thead>
             <tbody>
-              {contacts.map((contact) => (
+              {pager.visible.map((contact) => (
                 <tr key={contact.id} data-unread={!contact.isRead}>
                   <td>
                     {contact.isRead ? <Badge tone="neutral">Read</Badge> : <Badge tone="danger">New</Badge>}
@@ -82,6 +84,7 @@ export default function InquiriesPanel({ contacts, token, onChanged }) {
               ))}
             </tbody>
           </table>
+          <TablePager pager={pager} />
         </div>
       )}
 

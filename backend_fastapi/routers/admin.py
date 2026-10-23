@@ -24,6 +24,7 @@ from schemas.products import AdminProductResponse
 from core.security import get_current_admin
 from core.invoicing import InsufficientStock, move_stock
 from core.email import send_email_safely
+from core.pagination import MAX_ADMIN_ROWS
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
@@ -40,6 +41,20 @@ ALLOWED_IMAGE_TYPES = {
     "image/gif": ".gif",
 }
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+
+
+def detect_image_type(data: bytes) -> str | None:
+    """The real image type from the file's first bytes (the browser's content-type is
+    only a claim, and a renamed script would otherwise be stored and served)."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "uploads")
 
 # ============================================
@@ -96,7 +111,7 @@ def get_orders(
     admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+    orders = db.query(Order).order_by(Order.created_at.desc()).limit(MAX_ADMIN_ROWS).all()
     result = []
     for o in orders:
         result.append({
@@ -175,7 +190,7 @@ def get_order_detail(
 def _restock(db: Session, order: Order, direction: int, reason: str, admin: Admin) -> None:
     """Puts an order's goods back in stock (cancel) or takes them out again (reopen)."""
     for item in db.query(OrderItem).filter(OrderItem.order_id == order.id).all():
-        product = db.get(Product, item.product_id)
+        product = db.get(Product, item.product_id, with_for_update=True)
         if product is None:
             continue
         quantity = item.quantity
@@ -253,7 +268,7 @@ def get_contacts(
     admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    contacts = db.query(Contact).order_by(Contact.created_at.desc()).all()
+    contacts = db.query(Contact).order_by(Contact.created_at.desc()).limit(MAX_ADMIN_ROWS).all()
     result = []
     for c in contacts:
         result.append({
@@ -615,7 +630,7 @@ def get_quotes(
     admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    quotes = db.query(Quote).order_by(Quote.created_at.desc()).all()
+    quotes = db.query(Quote).order_by(Quote.created_at.desc()).limit(MAX_ADMIN_ROWS).all()
     result = []
     for q in quotes:
         result.append({
@@ -653,6 +668,9 @@ async def upload_image(
         raise HTTPException(status_code=413, detail="Images must be smaller than 5 MB.")
     if not contents:
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+    detected = detect_image_type(contents)
+    if detected is None or detected != image.content_type:
+        raise HTTPException(status_code=415, detail="That file is not a valid JPEG, PNG, WebP or GIF image.")
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{extension}"

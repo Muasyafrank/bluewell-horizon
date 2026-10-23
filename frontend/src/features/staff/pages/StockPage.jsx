@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { bmsApi } from '../../../api';
-import { AsyncSection, Button, Field, Modal } from '../../../components/ui';
-import { useApiResource } from '../../../hooks';
+import { AsyncSection, Button, Field, Modal, TablePager } from '../../../components/ui';
+import { useApiResource, usePagedRows } from '../../../hooks';
 import { formatDate } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
 import { useStaff } from '../StaffContext';
@@ -51,6 +51,7 @@ export default function StockPage() {
     const q = query.trim().toLowerCase();
     return (data || []).filter((p) => (!onlyFlagged || p.state !== 'ok') && (!q || `${p.name} ${p.category}`.toLowerCase().includes(q)));
   }, [data, query, onlyFlagged]);
+  const pager = usePagedRows(rows, { resetKey: `${query}|${onlyFlagged}` });
 
   const replace = (product) => setData((list) => list.map((p) => (p.id === product.id ? product : p)));
 
@@ -93,7 +94,7 @@ export default function StockPage() {
             <table className="bms-table">
               <thead><tr><th>Product</th><th className="num">In stock</th><th className="num">Reorder at</th><th>Status</th><th /></tr></thead>
               <tbody>
-                {rows.map((p) => (
+                {pager.visible.map((p) => (
                   <tr key={p.id}>
                     <td>{p.name}<div className="bms-sub">{p.category}</div></td>
                     <td className="num">{p.stock}</td><td className="num">{p.reorderLevel ?? '—'}</td>
@@ -106,6 +107,7 @@ export default function StockPage() {
                 ))}
               </tbody>
             </table>
+            <TablePager pager={pager} />
           </div>
         )}
       </AsyncSection>

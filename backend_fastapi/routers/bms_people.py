@@ -1,11 +1,12 @@
 """Business system: who is signed in, the customer directory, and staff accounts."""
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from core.invoicing import balance, payment_status
+from core.pagination import PageParams, page_params, paginate_list
 from core.permissions import ROLE_LABELS, modules_for, require
 from core.quotation import money
 from core.security import get_current_staff, get_password_hash
@@ -39,7 +40,12 @@ def _key(email: str | None) -> str:
 
 
 @router.get("/customers")
-def list_customers(admin: Admin = Depends(require("customers")), db: Session = Depends(get_db)):
+def list_customers(
+    params: PageParams = Depends(page_params),
+    q: str | None = Query(None, max_length=100),
+    admin: Admin = Depends(require("customers")),
+    db: Session = Depends(get_db),
+):
     """One row per email address, combining website accounts, orders and invoices."""
     people: dict[str, dict] = {}
 
@@ -70,7 +76,12 @@ def list_customers(admin: Admin = Depends(require("customers")), db: Session = D
         row["company"] = row["company"] or invoice.company_name
 
     rows = sorted(people.values(), key=lambda r: (r["lastOrderAt"] or "", r["name"]), reverse=True)
-    return [{**r, "billed": float(r["billed"]), "outstanding": float(r["outstanding"])} for r in rows]
+    needle = (q or "").strip().lower()
+    if needle:
+        rows = [r for r in rows if any(needle in (r[k] or "").lower() for k in ("name", "email", "company", "phone"))]
+    page = paginate_list(rows, params)
+    page["items"] = [{**r, "billed": float(r["billed"]), "outstanding": float(r["outstanding"])} for r in page["items"]]
+    return page
 
 
 @router.get("/customers/detail")

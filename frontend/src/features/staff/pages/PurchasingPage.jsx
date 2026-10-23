@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { bmsApi } from '../../../api';
-import { AsyncSection, Button, Field, Modal } from '../../../components/ui';
-import { useApiResource } from '../../../hooks';
+import { AsyncSection, Button, Field, Modal, TablePager } from '../../../components/ui';
+import { useApiResource, usePagedResource } from '../../../hooks';
 import { formatCurrency, formatDate } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
 import { useStaff } from '../StaffContext';
@@ -13,7 +13,7 @@ const blank = () => ({ supplierId: '', expectedOn: '', notes: '', lines: [{ prod
 
 export default function PurchasingPage() {
   const { token } = useStaff();
-  const pos = useApiResource((o) => bmsApi.listPurchaseOrders({ ...o, token }), { deps: [token], initialData: [] });
+  const pos = usePagedResource((params, o) => bmsApi.listPurchaseOrders(params, { ...o, token }), { deps: [token] });
   const suppliers = useApiResource((o) => bmsApi.listSuppliers({ ...o, token }), { deps: [token], initialData: [] });
   const stock = useApiResource((o) => bmsApi.listStock({ ...o, token }), { deps: [token], initialData: [] });
   const [editing, setEditing] = useState(null);
@@ -72,12 +72,12 @@ export default function PurchasingPage() {
           title={activeSuppliers.length === 0 ? 'Add a supplier first' : undefined}>New purchase order</Button>
       </PageHead>
       <AsyncSection loading={pos.loading} error={pos.error} onRetry={pos.reload}>
-        {pos.data.length === 0 ? <Empty>No purchase orders yet.</Empty> : (
+        {pos.rows.length === 0 ? <Empty>No purchase orders yet.</Empty> : (
           <div className="bms-table-wrap">
             <table className="bms-table">
               <thead><tr><th>Order</th><th>Supplier</th><th>Expected</th><th className="num">Cost</th><th>Status</th><th /></tr></thead>
               <tbody>
-                {pos.data.map((po) => (
+                {pos.rows.map((po) => (
                   <tr key={po.id}>
                     <td><strong>{po.number}</strong><div className="bms-sub">{po.lines.map((l) => `${l.quantity} × ${l.description}`).join(', ')}</div></td>
                     <td>{po.supplierName}</td><td>{po.expectedOn ? formatDate(po.expectedOn) : '—'}</td>
@@ -95,6 +95,7 @@ export default function PurchasingPage() {
                 ))}
               </tbody>
             </table>
+            <TablePager pager={pos.pager} />
           </div>
         )}
       </AsyncSection>

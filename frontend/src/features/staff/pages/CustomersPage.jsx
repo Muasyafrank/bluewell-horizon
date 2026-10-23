@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { bmsApi } from '../../../api';
-import { AsyncSection, Button, Field, Modal } from '../../../components/ui';
-import { useApiResource } from '../../../hooks';
+import { AsyncSection, Button, Field, Modal, TablePager } from '../../../components/ui';
+import { useApiResource, useDebouncedValue, usePagedResource } from '../../../hooks';
 import { formatCurrency, formatDate } from '../../../utils/format';
 import { toastError, toastSuccess } from '../../../utils/toast';
 import { useStaff } from '../StaffContext';
@@ -88,14 +88,13 @@ function CustomerDetail({ email, token, can, onClose }) {
 
 export default function CustomersPage() {
   const { token, can } = useStaff();
-  const { data, loading, error, reload } = useApiResource((o) => bmsApi.listCustomers({ ...o, token }), { deps: [token], initialData: [] });
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(null);
-
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (data || []).filter((c) => !q || [c.name, c.email, c.company, c.phone].some((v) => (v || '').toLowerCase().includes(q)));
-  }, [data, query]);
+  const search = useDebouncedValue(query.trim(), 300);
+  const { rows, pager, loading, error, reload } = usePagedResource(
+    (params, o) => bmsApi.listCustomers(params, { ...o, token }),
+    { filters: { q: search }, deps: [token] },
+  );
 
   return (
     <>
@@ -104,7 +103,7 @@ export default function CustomersPage() {
         <input type="search" placeholder="Search customers" aria-label="Search customers" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
       <AsyncSection loading={loading} error={error} onRetry={reload}>
-        {rows.length === 0 ? <Empty>{data?.length ? 'No customers match.' : 'No customers yet.'}</Empty> : (
+        {rows.length === 0 ? <Empty>{search ? 'No customers match.' : 'No customers yet.'}</Empty> : (
           <div className="bms-table-wrap">
             <table className="bms-table">
               <thead><tr><th>Customer</th><th>Phone</th><th className="num">Orders</th>{can('invoices') && <><th className="num">Billed</th><th className="num">Owing</th></>}<th>Last order</th></tr></thead>
@@ -120,6 +119,7 @@ export default function CustomersPage() {
                 ))}
               </tbody>
             </table>
+            <TablePager pager={pager} />
           </div>
         )}
       </AsyncSection>

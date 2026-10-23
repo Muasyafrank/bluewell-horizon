@@ -10,6 +10,7 @@ export { default as IconButton } from './IconButton';
 export { default as Loader } from './Loader';
 export { default as Modal } from './Modal';
 export { default as Pagination } from './Pagination';
+export { default as TablePager } from './TablePager';
 export { default as StatusBadge, ORDER_STATUSES } from './StatusBadge';
 export { default as SectionHeading } from './SectionHeading';
 export { default as SearchableSelect } from './SearchableSelect';

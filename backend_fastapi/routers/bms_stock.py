@@ -5,10 +5,11 @@ a reference and a name against it.
 """
 from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.invoicing import InsufficientStock, move_stock
+from core.pagination import PageParams, page_params, paginate_query
 from core.permissions import require
 from core.quotation import money
 from database import get_db
@@ -36,8 +37,8 @@ def serialise_product(product: Product) -> dict:
     }
 
 
-def _product(db: Session, product_id: int) -> Product:
-    product = db.get(Product, product_id)
+def _product(db: Session, product_id: int, lock: bool = False) -> Product:
+    product = db.get(Product, product_id, with_for_update=lock)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -63,7 +64,7 @@ def stock_movements(product_id: int, admin: Admin = Depends(require("stock")), d
 @router.post("/stock/{product_id}/adjust")
 def adjust_stock(product_id: int, request: StockAdjustment, admin: Admin = Depends(require("stock")),
                  db: Session = Depends(get_db)):
-    product = _product(db, product_id)
+    product = _product(db, product_id, lock=True)
     if request.change == 0:
         raise HTTPException(status_code=422, detail="Enter how many units to add or remove.")
     if request.reason == "damage" and request.change > 0:
@@ -169,8 +170,16 @@ def _fill_po(db: Session, po: PurchaseOrder, request: PurchaseOrderRequest) -> N
 
 
 @router.get("/purchase-orders")
-def list_purchase_orders(admin: Admin = Depends(require("purchasing")), db: Session = Depends(get_db)):
-    return [serialise_po(p) for p in db.query(PurchaseOrder).order_by(PurchaseOrder.id.desc()).all()]
+def list_purchase_orders(
+    params: PageParams = Depends(page_params),
+    po_status: str | None = Query(None, alias="status", max_length=20),
+    admin: Admin = Depends(require("purchasing")),
+    db: Session = Depends(get_db),
+):
+    query = db.query(PurchaseOrder)
+    if po_status:
+        query = query.filter(PurchaseOrder.status == po_status)
+    return paginate_query(query.order_by(PurchaseOrder.id.desc()), params, serialise_po)
 
 
 @router.post("/purchase-orders", status_code=status.HTTP_201_CREATED)
@@ -215,7 +224,7 @@ def receive_purchase_order(po_id: int, admin: Admin = Depends(require("purchasin
     if po.status != "ordered":
         raise HTTPException(status_code=409, detail="Only an order placed with the supplier can be received.")
     for line in po.lines:
-        product = db.get(Product, line["productId"])
+        product = db.get(Product, line["productId"], with_for_update=True)
         if product is not None:
             move_stock(db, product, int(line["quantity"]), "purchase", reference=po.number, by=admin.display_name)
     po.status, po.received_at = "received", datetime.now(timezone.utc)

@@ -12,6 +12,7 @@ a perfectly valid admin token. Anyone can register as a customer, so that was
 a privilege-escalation hole. The role claim makes each guard reject tokens
 that were issued for the other audience.
 """
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -21,6 +22,8 @@ from config import settings
 
 ROLE_ADMIN = "admin"
 ROLE_CUSTOMER = "customer"
+ROLE_PASSWORD_RESET = "password-reset"
+RESET_TOKEN_MINUTES = 60
 
 
 def create_access_token(
@@ -54,3 +57,34 @@ def decode_subject(token: str, role: str) -> Optional[int]:
         return int(payload.get("sub"))
     except (TypeError, ValueError):
         return None
+
+
+def _password_fingerprint(password_hash: str) -> str:
+    return hashlib.sha256(password_hash.encode("utf-8")).hexdigest()[:24]
+
+
+def create_reset_token(customer_id: int, password_hash: str) -> str:
+    """A one-hour token for the emailed reset link.
+
+    It carries a fingerprint of the current password hash, so it stops working the
+    moment the password changes: each link can be used once, with nothing stored.
+    """
+    expires = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_MINUTES)
+    claims = {"sub": str(customer_id), "role": ROLE_PASSWORD_RESET,
+              "fp": _password_fingerprint(password_hash), "exp": expires}
+    return jwt.encode(claims, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_reset_token(token: str) -> Optional[tuple[int, str]]:
+    """(customer id, password fingerprint) from a valid reset token, else None."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        if payload.get("role") != ROLE_PASSWORD_RESET:
+            return None
+        return int(payload["sub"]), str(payload["fp"])
+    except (JWTError, KeyError, TypeError, ValueError):
+        return None
+
+
+def reset_token_matches(fingerprint: str, password_hash: str) -> bool:
+    return fingerprint == _password_fingerprint(password_hash)

@@ -1,12 +1,13 @@
 import { Helmet } from 'react-helmet-async';
+import { SITE_URL } from './SEO';
 
 const StructuredData = () => {
   const businessData = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Bluewell Horizon Limited",
-    "image": "https://www.bluewellhorizonlimited.com/images/logo.png",
-    "url": "https://www.bluewellhorizonlimited.com",
+    "image": `${SITE_URL}/logo.png`,
+    "url": SITE_URL,
     "telephone": "+254721633223",
     "email": "bluewellsynergy@gmail.com",
     "address": {

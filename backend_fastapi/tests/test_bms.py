@@ -44,7 +44,7 @@ def quote(db, order, status="sent"):
 
 def manual_invoice(**overrides):
     data = {
-        "customerName": "Acme Ltd", "customerEmail": "buyer@acme.test",
+        "customerName": "Acme Ltd", "customerEmail": "buyer@acme.co.ke",
         "lines": [{"description": "Service call", "quantity": 1, "unitPrice": 1000}],
         "deliveryFee": 0, "includeVat": True,
     }
@@ -307,7 +307,7 @@ def test_stores_staff_can_purchase_but_not_invoice(client, db, stocked):
 def test_customer_directory_combines_orders_and_invoices(client, db, order, admin_headers):
     client.post("/api/bms/invoices", headers=admin_headers,
                 json=manual_invoice(customerEmail=order.customer_email))
-    rows = client.get("/api/bms/customers", headers=admin_headers).json()
+    rows = client.get("/api/bms/customers", headers=admin_headers).json()["items"]
     mine = next(r for r in rows if r["email"] == order.customer_email.lower())
     assert mine["orders"] == 1 and mine["invoices"] == 1 and mine["outstanding"] == 1160.0
 
@@ -323,7 +323,7 @@ def test_customer_directory_combines_orders_and_invoices(client, db, order, admi
 def test_reports_add_up(client, db, admin_headers):
     one = client.post("/api/bms/invoices", headers=admin_headers, json=manual_invoice()).json()
     client.post("/api/bms/invoices", headers=admin_headers,
-                json=manual_invoice(customerName="Beta", customerEmail="b@beta.test",
+                json=manual_invoice(customerName="Beta", customerEmail="b@beta.co.ke",
                                     lines=[{"description": "Filter", "quantity": 2, "unitPrice": 500}]))
     pay(client, admin_headers, one["id"])
     data = client.get("/api/bms/reports/summary", headers=admin_headers).json()

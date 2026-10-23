@@ -2,7 +2,8 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 const SITE_NAME = 'Bluewell Horizon Limited';
-const SITE_URL = 'https://www.bluewellhorizonlimited.com';
+// Set REACT_APP_SITE_URL when building for the real domain.
+export const SITE_URL = (process.env.REACT_APP_SITE_URL || 'https://www.bluewellhorizonlimited.com').replace(/\/$/, '');
 const DEFAULT_DESCRIPTION =
   'Bluewell Horizon Limited designs, supplies, installs and maintains water treatment systems for homes, businesses, institutions and industries across Kenya.';
 

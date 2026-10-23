@@ -1,10 +1,12 @@
 import React from 'react';
-import { Badge } from '../../../components/ui';
+import { Badge, TablePager } from '../../../components/ui';
+import { usePagedRows } from '../../../hooks';
 import { formatDateTime } from '../../../utils/format';
 
 /** Read-only list of quote requests — the dashboard fetched these but never
  *  displayed them anywhere. */
 export default function QuotesPanel({ quotes }) {
+  const pager = usePagedRows(quotes);
   return (
     <>
       <h2 className="h5 mb-3">Quote requests</h2>
@@ -25,7 +27,7 @@ export default function QuotesPanel({ quotes }) {
               </tr>
             </thead>
             <tbody>
-              {quotes.map((quote) => (
+              {pager.visible.map((quote) => (
                 <tr key={quote.id}>
                   <td className="fw-semibold">{quote.name}</td>
                   <td>{quote.companyName}</td>
@@ -40,6 +42,7 @@ export default function QuotesPanel({ quotes }) {
               ))}
             </tbody>
           </table>
+          <TablePager pager={pager} />
         </div>
       )}
     </>

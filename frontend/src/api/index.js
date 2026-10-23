@@ -27,6 +27,8 @@ export const authApi = {
   adminLogin: (credentials) => http.post('/api/admin/login', credentials),
   customerLogin: (credentials) => http.post('/api/customers/login', credentials),
   customerRegister: (details) => http.post('/api/customers/register', details),
+  forgotPassword: (email) => http.post('/api/customers/forgot-password', { email }),
+  resetPassword: (token, password) => http.post('/api/customers/reset-password', { token, password }),
 };
 
 /* --- Orders, quotes and enquiries ---------------------------------------- */
@@ -106,7 +108,7 @@ export const bmsApi = {
   me: (options) => http.get('/api/bms/me', options),
   dashboard: (options) => http.get('/api/bms/dashboard', options),
 
-  listInvoices: (options) => http.get('/api/bms/invoices', options),
+  listInvoices: (params, options) => http.get(`/api/bms/invoices${qs(params)}`, options),
   readyToInvoice: (options) => http.get('/api/bms/invoices/ready', options),
   getInvoice: (id, options) => http.get(`/api/bms/invoices/${id}`, options),
   createInvoice: (body, options) => http.post('/api/bms/invoices', body, options),
@@ -117,7 +119,7 @@ export const bmsApi = {
   recordPayment: (id, body, options) => http.post(`/api/bms/invoices/${id}/payments`, body, options),
   removePayment: (id, paymentId, options) => http.del(`/api/bms/invoices/${id}/payments/${paymentId}`, options),
 
-  listCustomers: (options) => http.get('/api/bms/customers', options),
+  listCustomers: (params, options) => http.get(`/api/bms/customers${qs(params)}`, options),
   getCustomer: (email, options) => http.get(`/api/bms/customers/detail${qs({ email })}`, options),
   addNote: (email, body, options) => http.post(`/api/bms/customers/notes${qs({ email })}`, { body }, options),
   deleteNote: (id, options) => http.del(`/api/bms/customers/notes/${id}`, options),
@@ -132,7 +134,7 @@ export const bmsApi = {
   createSupplier: (body, options) => http.post('/api/bms/suppliers', body, options),
   updateSupplier: (id, body, options) => http.put(`/api/bms/suppliers/${id}`, body, options),
 
-  listPurchaseOrders: (options) => http.get('/api/bms/purchase-orders', options),
+  listPurchaseOrders: (params, options) => http.get(`/api/bms/purchase-orders${qs(params)}`, options),
   createPurchaseOrder: (body, options) => http.post('/api/bms/purchase-orders', body, options),
   updatePurchaseOrder: (id, body, options) => http.put(`/api/bms/purchase-orders/${id}`, body, options),
   purchaseOrderAction: (id, action, options) =>

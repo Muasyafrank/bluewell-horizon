@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from core.email import send_email_safely
 from core.security import get_current_customer, get_current_customer_optional
+from core.ratelimit import rate_limit
 from database import get_db
 from models import Customer, Order, OrderItem, Product, StockMovement
 from schemas.orders import CheckoutRequest, CheckoutResponse, OrderResponse
@@ -22,7 +23,8 @@ def unit_price(product: Product) -> Decimal:
     return Decimal(str(product.price or 0))
 
 
-@router.post("/orders/checkout", response_model=CheckoutResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/orders/checkout", response_model=CheckoutResponse, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(rate_limit("checkout", limit=20, window_seconds=3600))])
 def checkout(
     checkout_data: CheckoutRequest,
     background_tasks: BackgroundTasks,
@@ -37,7 +39,8 @@ def checkout(
     for item in checkout_data.items:
         requested[item.id] += item.quantity
     products = {
-        p.id: p for p in db.query(Product).filter(Product.id.in_(list(requested))).all()
+        # Locked until the order commits, so two simultaneous orders cannot both take the last unit.
+        p.id: p for p in db.query(Product).filter(Product.id.in_(list(requested))).with_for_update().all()
     }
     missing = sorted(set(requested) - set(products))
     if missing:

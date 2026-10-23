@@ -8,9 +8,13 @@
  * normalised into a single ApiError shape.
  */
 
-export const API_BASE_URL = (
-  process.env.REACT_APP_API_URL || 'http://localhost:5000'
-).replace(/\/$/, '');
+// In development the API is on localhost. A production build with no
+// REACT_APP_API_URL talks to the website's own origin instead (the reverse proxy
+// forwards /api and /uploads to the backend), so a forgotten setting can never
+// leave the live site calling a visitor's own localhost.
+const DEFAULT_API_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+
+export const API_BASE_URL = (process.env.REACT_APP_API_URL ?? DEFAULT_API_URL).replace(/\/$/, '');
 
 /**
  * Turns a stored image path into a URL the browser can load.

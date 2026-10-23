@@ -28,6 +28,13 @@ def _require(name: str) -> str:
 
 
 class Settings:
+    # "production" turns on the strict checks below and hides the API docs.
+    environment: str = os.getenv("ENVIRONMENT", "development").strip().lower()
+    log_level: str = os.getenv("LOG_LEVEL", "INFO").strip().upper()
+    # Read the client address from X-Forwarded-For (set true only behind your own reverse proxy).
+    trust_proxy: bool = os.getenv("TRUST_PROXY", "false").lower() in ("1", "true", "yes")
+    rate_limit_enabled: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() not in ("0", "false", "no")
+
     # Database
     database_url: str = _require("DATABASE_URL")
 
@@ -40,6 +47,12 @@ class Settings:
     # failed, when these are unset)
     email_user: str | None = os.getenv("EMAIL_USER") or None
     email_pass: str | None = os.getenv("EMAIL_PASS") or None
+    # Sending through Gmail's web API (HTTPS, port 443) instead of SMTP, for
+    # networks and hosts that block mail ports. Set up with gmail_authorize.py;
+    # see docs/email-setup.md. When all three are set it is used instead of SMTP.
+    gmail_client_id: str | None = os.getenv("GMAIL_CLIENT_ID") or None
+    gmail_client_secret: str | None = os.getenv("GMAIL_CLIENT_SECRET") or None
+    gmail_refresh_token: str | None = os.getenv("GMAIL_REFRESH_TOKEN") or None
 
     # Payment details printed on quotations. Each method appears on a quotation
     # only when its details are filled in (cash on delivery needs none). See
@@ -62,9 +75,31 @@ class Settings:
     ]
 
 
-settings = Settings()
+    # Public address of the website, used for links in emails (password reset).
+    site_url: str = (os.getenv("SITE_URL") or "").rstrip("/")
 
-if len(settings.secret_key) < 32:
+
+settings = Settings()
+if not settings.site_url:
+    settings.site_url = settings.cors_origins[0].rstrip("/")
+is_production = settings.environment == "production"
+
+_PLACEHOLDER_SECRETS = ("changeme", "change-me", "your-secret", "secret", "replace", "example", "test-secret")
+
+if is_production:
+    # Refuse to start with settings that would be unsafe on the public internet,
+    # rather than logging a warning nobody reads.
+    problems = []
+    if len(settings.secret_key) < 32 or any(p in settings.secret_key.lower() for p in _PLACEHOLDER_SECRETS):
+        problems.append("SECRET_KEY must be a random value of at least 32 characters "
+                        "(python -c \"import secrets; print(secrets.token_urlsafe(48))\")")
+    if settings.database_url.startswith("sqlite"):
+        problems.append("DATABASE_URL must point at PostgreSQL, not SQLite")
+    if all("localhost" in o or "127.0.0.1" in o for o in settings.cors_origins):
+        problems.append("CORS_ORIGINS must list your website's address (https://...), not localhost")
+    if problems:
+        raise RuntimeError("Unsafe production configuration:\n- " + "\n- ".join(problems))
+elif len(settings.secret_key) < 32:
     logger.warning(
         "SECRET_KEY is shorter than 32 characters; anyone who can guess it can forge "
         "login tokens. Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""

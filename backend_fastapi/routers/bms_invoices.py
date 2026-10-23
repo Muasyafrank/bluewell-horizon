@@ -9,12 +9,13 @@ stock they use with a stock adjustment.
 import logging
 from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, func, not_, or_
 from sqlalchemy.orm import Session
 
-from core.email import email_is_configured, send_email
-from config import settings
+from core.email import business_address, email_is_configured, send_email
 from core.invoicing import balance, default_due, invoice_number, payment_status, render_invoice_email
+from core.pagination import PageParams, like_pattern, page_params, paginate_query
 from core.payments import available_payment_methods
 from core.permissions import require
 from core.quotation import compute_totals, money
@@ -56,8 +57,10 @@ def serialise_invoice(invoice: Invoice, detail: bool = False) -> dict:
     return data
 
 
-def _get(db: Session, invoice_id: int) -> Invoice:
-    invoice = db.get(Invoice, invoice_id)
+def _get(db: Session, invoice_id: int, lock: bool = False) -> Invoice:
+    # `lock` holds the row until commit, so two people recording a payment at once
+    # cannot both pass the "not more than the balance" check.
+    invoice = db.get(Invoice, invoice_id, with_for_update=lock)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return invoice
@@ -87,10 +90,39 @@ def _create(db: Session, admin: Admin, *, order_id, name, email, phone, company,
     return invoice
 
 
+def _status_clause(name: str, today: date):
+    """The SQL twin of core.invoicing.payment_status, so the status filter can run in the database."""
+    live = Invoice.status != "void"
+    owing = (Invoice.total_amount - Invoice.amount_paid) > 0
+    if name == "void":
+        return Invoice.status == "void"
+    if name == "paid":
+        return and_(live, not_(owing))
+    if name == "overdue":
+        return and_(live, owing, Invoice.due_on < today)
+    if name == "partial":
+        return and_(live, owing, Invoice.due_on >= today, Invoice.amount_paid > 0)
+    return and_(live, owing, Invoice.due_on >= today, Invoice.amount_paid <= 0)  # unpaid
+
+
 @router.get("/invoices")
-def list_invoices(admin: Admin = Depends(require("invoices")), db: Session = Depends(get_db)):
-    rows = db.query(Invoice).order_by(Invoice.id.desc()).all()
-    return [serialise_invoice(i) for i in rows]
+def list_invoices(
+    params: PageParams = Depends(page_params),
+    q: str | None = Query(None, max_length=100),
+    payment_status_filter: str | None = Query(None, alias="status", pattern="^(paid|partial|unpaid|overdue|void)$"),
+    admin: Admin = Depends(require("invoices")),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Invoice)
+    if q and q.strip():
+        like = like_pattern(q)
+        query = query.filter(or_(*[
+            func.lower(column).like(like, escape="\\")
+            for column in (Invoice.number, Invoice.customer_name, Invoice.company_name, Invoice.customer_email)
+        ]))
+    if payment_status_filter:
+        query = query.filter(_status_clause(payment_status_filter, date.today()))
+    return paginate_query(query.order_by(Invoice.id.desc()), params, serialise_invoice)
 
 
 @router.get("/invoices/ready")
@@ -186,7 +218,7 @@ def send_invoice(invoice_id: int, admin: Admin = Depends(require("invoices")), d
         raise HTTPException(status_code=503, detail="Email is not set up on the server (EMAIL_USER and EMAIL_PASS).")
     subject, html = render_invoice_email(invoice, available_payment_methods())
     try:
-        send_email(subject=subject, body=html, to=invoice.customer_email, cc=settings.email_user)
+        send_email(subject=subject, body=html, to=invoice.customer_email, cc=business_address())
     except Exception:  # noqa: BLE001
         logger.exception("Could not send invoice %s", invoice.number)
         raise HTTPException(status_code=502, detail="The email could not be sent. Please try again.")
@@ -198,7 +230,7 @@ def send_invoice(invoice_id: int, admin: Admin = Depends(require("invoices")), d
 @router.post("/invoices/{invoice_id}/payments", status_code=status.HTTP_201_CREATED)
 def record_payment(invoice_id: int, request: PaymentRequest, admin: Admin = Depends(require("payments")),
                    db: Session = Depends(get_db)):
-    invoice = _get(db, invoice_id)
+    invoice = _get(db, invoice_id, lock=True)
     if invoice.status == "void":
         raise HTTPException(status_code=409, detail="This invoice is void.")
     amount = money(request.amount)
@@ -221,7 +253,7 @@ def record_payment(invoice_id: int, request: PaymentRequest, admin: Admin = Depe
 @router.delete("/invoices/{invoice_id}/payments/{payment_id}")
 def remove_payment(invoice_id: int, payment_id: int, admin: Admin = Depends(require("payments")),
                    db: Session = Depends(get_db)):
-    invoice = _get(db, invoice_id)
+    invoice = _get(db, invoice_id, lock=True)
     payment = next((p for p in invoice.payments if p.id == payment_id), None)
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")

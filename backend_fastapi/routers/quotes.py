@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.email import send_email_safely
+from core.ratelimit import rate_limit
 from database import get_db
 from models import Quote
 from schemas.quotes import QuoteRequest
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["Quotes"])
 
 
-@router.post("/quotes", status_code=status.HTTP_201_CREATED)
+@router.post("/quotes", status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("quote", limit=10, window_seconds=3600))])
 def submit_quote(
     quote_data: QuoteRequest,
     background_tasks: BackgroundTasks,
